@@ -123,6 +123,11 @@ a { text-decoration: none; color: inherit; }
   display: flex;
   align-items: center;
   flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: 0;
+  touch-action: manipulation;
+  cursor: pointer;
 }
 
 .h-logo-img {
@@ -295,11 +300,93 @@ a { text-decoration: none; color: inherit; }
   display: none;
 }
 
+/* Mobile nav dropdown — hidden on desktop */
+.mobile-nav-dropdown {
+  display: none;
+}
+.mobile-nav-backdrop {
+  display: none;
+}
+
 /* ═══════════════════════════════════════════════
    MOBILE RESPONSIVE
    ═══════════════════════════════════════════════ */
 
 @media (max-width: 768px) {
+  /* Backdrop */
+  .mobile-nav-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 98;
+    touch-action: manipulation;
+  }
+
+  /* Dropdown */
+  .mobile-nav-dropdown {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    position: fixed;
+    top: 58px;
+    left: 0;
+    right: 0;
+    z-index: 99;
+    background: #000000;
+    border-radius: 0 0 20px 20px;
+    padding: 0 20px;
+    list-style: none;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(-6px);
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.3s ease,
+                transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                padding 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .mobile-nav-dropdown.open {
+    max-height: 260px;
+    opacity: 1;
+    transform: translateY(0);
+    padding: 8px 20px 24px;
+  }
+
+  @keyframes mobile-nav-item-in {
+    from { opacity: 0; transform: translateX(-12px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  .mobile-nav-dropdown .h-nav-item {
+    list-style: none;
+    padding: 4px 0;
+    opacity: 0;
+    width: 100%;
+  }
+
+  .mobile-nav-dropdown.open .h-nav-item:nth-child(1) {
+    animation: mobile-nav-item-in 0.28s ease forwards;
+    animation-delay: 0.08s;
+  }
+  .mobile-nav-dropdown.open .h-nav-item:nth-child(2) {
+    animation: mobile-nav-item-in 0.28s ease forwards;
+    animation-delay: 0.14s;
+  }
+  .mobile-nav-dropdown.open .h-nav-item:nth-child(3) {
+    animation: mobile-nav-item-in 0.28s ease forwards;
+    animation-delay: 0.20s;
+  }
+
+  .mobile-nav-dropdown .h-nav-item a {
+    display: inline-block;
+    text-align: left;
+    font-size: 1.05rem;
+    font-weight: 600;
+    padding: 9px 20px;
+    color: #ffffff;
+  }
+
   /* Navbar */
   .h-nav {
     padding: 0 16px;

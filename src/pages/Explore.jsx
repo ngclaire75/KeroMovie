@@ -11,6 +11,7 @@ export default function Explore() {
   const [inputValue, setInputValue]       = useState('');
   const [searchQuery, setSearchQuery]     = useState('');
   const [searchOpen, setSearchOpen]       = useState(false);
+  const [menuOpen, setMenuOpen]           = useState(false);
   const debounceRef = useRef(null);
   const searchInputRef = useRef(null);
 
@@ -44,9 +45,9 @@ export default function Explore() {
 
       {/* Navbar */}
       <nav className="h-nav">
-        <div className="h-logo">
+        <button className="h-logo" onClick={() => setMenuOpen(p => !p)} aria-label="Menu">
           <img src={logo} alt="KeroMovie" className="h-logo-img" />
-        </div>
+        </button>
         <ul className="h-center-links">
           <li className="h-nav-item active">
             <a href="#">Explore</a>
@@ -89,6 +90,14 @@ export default function Explore() {
           )}
         </div>
       </nav>
+
+      {/* Mobile nav dropdown */}
+      <div className={`mobile-nav-dropdown${menuOpen ? ' open' : ''}`} onClick={() => setMenuOpen(false)}>
+        <li className="h-nav-item active"><a href="#">Explore</a></li>
+        <li className="h-nav-item"><Link to="/browse">Dashboard</Link></li>
+        <li className="h-nav-item"><Link to="/forums">Forum</Link></li>
+      </div>
+      {menuOpen && <div className="mobile-nav-backdrop" onClick={() => setMenuOpen(false)} />}
 
       {/* Mobile genre strip */}
       <div className="mobile-genre-strip">
