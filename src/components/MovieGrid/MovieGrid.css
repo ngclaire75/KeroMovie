@@ -197,7 +197,7 @@
 
 .mg-error-sub {
   font-size: 0.92rem;
-  color: #7a4040;
+  color: rgba(255, 255, 255, 0.55);
   line-height: 1.6;
   opacity: 0;
   animation: mg-sub-in 0.35s ease 1.1s forwards;
