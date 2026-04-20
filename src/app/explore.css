@@ -104,12 +104,7 @@ a { text-decoration: none; color: inherit; }
 .home-main::-webkit-scrollbar { display: none; }
 
 .home-bg-glow {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse at 50% 50%, rgba(180,0,0,0.22) 0%, transparent 65%),
-    radial-gradient(ellipse at 50% -10%, rgba(160,0,0,0.28) 0%, transparent 50%);
-  pointer-events: none;
+  display: none;
 }
 
 /* Navbar */
