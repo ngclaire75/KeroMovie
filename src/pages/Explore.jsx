@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import logo from '../../images/keromovielogo.png';
 import Sidebar from '../components/sidebar/Sidebar';
@@ -13,6 +13,13 @@ export default function Explore() {
   const [searchOpen, setSearchOpen]       = useState(false);
   const [menuOpen, setMenuOpen]           = useState(false);
   const debounceRef = useRef(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const close = () => setMenuOpen(false);
+    window.addEventListener('scroll', close, { passive: true });
+    return () => window.removeEventListener('scroll', close);
+  }, [menuOpen]);
   const searchInputRef = useRef(null);
 
   function handleSearchChange(e) {
@@ -45,10 +52,26 @@ export default function Explore() {
 
       {/* Navbar */}
       <nav className="h-nav">
-        <button className="h-logo" onClick={() => setMenuOpen(p => !p)} aria-label="Menu">
+        {/* Desktop: navigate home */}
+        <Link to="/" className="h-logo h-logo-desktop">
+          <img src={logo} alt="KeroMovie" className="h-logo-img" />
+          <span className="h-logo-text">
+            {'Kero'.split('').map((ch, i) => (
+              <span key={i} className={`h-logo-kero h-logo-l h-logo-l-${i}`}>{ch}</span>
+            ))}
+            {'Movie'.split('').map((ch, i) => (
+              <span key={i + 4} className={`h-logo-movie h-logo-l h-logo-l-${i + 4}`}>{ch}</span>
+            ))}
+          </span>
+        </Link>
+        {/* Mobile: toggle dropdown */}
+        <button className="h-logo h-logo-mobile" onClick={() => setMenuOpen(p => !p)} aria-label="Menu">
           <img src={logo} alt="KeroMovie" className="h-logo-img" />
         </button>
         <ul className="h-center-links">
+          <li className="h-nav-item">
+            <Link to="/">Home</Link>
+          </li>
           <li className="h-nav-item active">
             <a href="#">Explore</a>
           </li>
@@ -62,7 +85,7 @@ export default function Explore() {
 
         <div className={`h-search${searchOpen ? ' h-search-open' : ''}`}>
           <button className="h-search-icon-btn" onClick={openSearch} aria-label="Search">
-            <svg className="h-search-icon" width="15" height="15" viewBox="0 0 24 24"
+            <svg className="h-search-icon" width="13" height="13" viewBox="0 0 24 24"
               fill="none" stroke="currentColor" strokeWidth="2.2"
               strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8" />
@@ -93,6 +116,7 @@ export default function Explore() {
 
       {/* Mobile nav dropdown */}
       <div className={`mobile-nav-dropdown${menuOpen ? ' open' : ''}`} onClick={() => setMenuOpen(false)}>
+        <li className="h-nav-item"><Link to="/">Home</Link></li>
         <li className="h-nav-item active"><a href="#">Explore</a></li>
         <li className="h-nav-item"><Link to="/browse">Dashboard</Link></li>
         <li className="h-nav-item"><Link to="/forums">Forum</Link></li>

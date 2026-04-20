@@ -7,18 +7,18 @@
 }
 
 .mg-heading {
-  font-size: 27px;
+  font-size: 24px;
   font-weight: 700;
   color: #ffffff;
   letter-spacing: 0.9;
-  margin-bottom: 45px;
+  margin-bottom: 37px;
 }
 
 .mg-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, 145px);
   gap: 16px;
-  background: #050003;
+  background: transparent;
 }
 
 /* ── Card ── */
@@ -54,6 +54,17 @@
   width: 100%;
   height: 100%;
   background: linear-gradient(135deg, #3b0010, #0d0005);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mg-no-image {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .mg-type-badge {

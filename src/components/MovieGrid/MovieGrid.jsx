@@ -50,6 +50,23 @@ function getPrimaryCountry(country = '') {
   return country.split(',')[0].trim();
 }
 
+const LS_PREFIX = 'kmv_';
+const LS_TTL    = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+function lsGet(key) {
+  try {
+    const raw = localStorage.getItem(LS_PREFIX + key);
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    if (Date.now() - ts > LS_TTL) { localStorage.removeItem(LS_PREFIX + key); return null; }
+    return data;
+  } catch { return null; }
+}
+
+function lsSet(key, data) {
+  try { localStorage.setItem(LS_PREFIX + key, JSON.stringify({ ts: Date.now(), data })); } catch {}
+}
+
 export default function MovieGrid({ genre = 'Trending Now', searchQuery = '' }) {
   const [movies, setMovies]   = useState([]);
   const [loading, setLoading] = useState(true);
@@ -69,6 +86,15 @@ export default function MovieGrid({ genre = 'Trending Now', searchQuery = '' }) 
 
     if (cache.current[cacheKey]) {
       setMovies(cache.current[cacheKey]);
+      setLoading(false);
+      setTimeout(() => setVisible(true), 30);
+      return;
+    }
+
+    const stored = lsGet(cacheKey);
+    if (stored) {
+      cache.current[cacheKey] = stored;
+      setMovies(stored);
       setLoading(false);
       setTimeout(() => setVisible(true), 30);
       return;
@@ -97,6 +123,7 @@ export default function MovieGrid({ genre = 'Trending Now', searchQuery = '' }) 
           ).then(results => {
             const valid = results.filter(m => m.Response === 'True');
             cache.current[cacheKey] = valid;
+            lsSet(cacheKey, valid);
             setMovies(valid);
             setLoading(false);
             setTimeout(() => setVisible(true), 30);
@@ -127,6 +154,7 @@ export default function MovieGrid({ genre = 'Trending Now', searchQuery = '' }) 
         ).then(results => {
           const valid = results.filter(m => m.Response === 'True');
           cache.current[cacheKey] = valid;
+          lsSet(cacheKey, valid);
           setMovies(valid);
           setLoading(false);
           setTimeout(() => setVisible(true), 30);
@@ -189,9 +217,23 @@ export default function MovieGrid({ genre = 'Trending Now', searchQuery = '' }) 
             >
               <div className="mg-poster">
                 {poster
-                  ? <img src={poster} alt={movie.Title} className="mg-poster-img" />
-                  : <div className="mg-poster-fallback" />
+                  ? <img
+                      src={poster}
+                      alt={movie.Title}
+                      className="mg-poster-img"
+                      onError={e => {
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                  : null
                 }
+                <div
+                  className="mg-poster-fallback"
+                  style={{ display: poster ? 'none' : 'flex' }}
+                >
+                  <span className="mg-no-image">No Image</span>
+                </div>
                 {isTV && <span className="mg-type-badge">TV Series</span>}
               </div>
               <div className="mg-info">
