@@ -1,0 +1,115 @@
+/* ═══════════════════════════════════════════════
+   SIDEBAR — Explore page only
+   ═══════════════════════════════════════════════ */
+
+/* Left sidebar */
+.h-sidebar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding-left: 28px;
+  padding-top: 5vh;
+}
+
+.h-sidebar-links {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 10px;
+  background: none;
+  border: none;
+  box-shadow: none;
+}
+
+/* Force all sidebar pills to match the width of "Trending Now" */
+.h-sidebar-links .h-nav-item a,
+.h-sidebar-links .h-nav-item button.h-sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 192px;
+  text-align: left;
+}
+
+.h-sidebar-icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+/* Expandable section — overflow:visible so drop-shadows never get clipped */
+.sidebar-expandable {
+  overflow: visible;
+  max-height: 0;
+  transition: max-height 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sidebar-expandable.open {
+  max-height: 420px;
+}
+
+/* Hide items when collapsed so they don't bleed over the chevron */
+.sidebar-expandable .h-nav-item {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.sidebar-expandable.open .h-nav-item {
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 0.3s ease 0.15s;
+}
+
+/* Wrap holds the ul and chevron below it */
+.h-sidebar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Chevron toggle button — outside the panel */
+.sidebar-chevron-item {
+  display: flex;
+  justify-content: center;
+}
+
+.sidebar-chevron-btn {
+  background: none;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9e5a5a;
+  padding: 10px;
+  transition: color 0.2s;
+}
+
+.sidebar-chevron-btn:hover {
+  color: #fff;
+}
+
+.sidebar-chevron-btn svg {
+  transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-chevron-btn svg.chevron-up {
+  transform: rotate(180deg);
+}
+
+@media (max-width: 768px) {
+  .h-sidebar {
+    display: none;
+  }
+}
