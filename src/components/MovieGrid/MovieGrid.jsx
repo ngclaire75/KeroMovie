@@ -1,57 +1,28 @@
 import { useEffect, useState, useRef } from 'react';
 import './MovieGrid.css';
 
-const MOVIES_BY_GENRE = {
-  'Trending Now': [
-    'tt4574334','tt4154756','tt5675620','tt2771200','tt6320628','tt6966692',
-    'tt4154796','tt4633694','tt0816692','tt1375666','tt5311514','tt6751668',
-    'tt7286456','tt1477834','tt4154664','tt0468569','tt2250912','tt3501632',
-    'tt3896198','tt0848228',
-  ],
-  'Action': [
-    'tt0468569','tt0848228','tt3498820','tt1825683','tt3501632','tt0372183',
-    'tt7126948','tt1392190','tt2015381','tt0137523','tt1345836','tt0110912',
-    'tt4154756','tt4154796','tt2250912','tt7286456','tt2395427','tt1843866',
-    'tt0369610','tt1431045','tt3896198','tt4154664','tt6320628','tt4633694',
-  ],
-  'Comedy': [
-    'tt0993846','tt4116284','tt0816711','tt0942385','tt5013056','tt1375670',
-    'tt6723592','tt7131622','tt1045658','tt2562232','tt1431045','tt1853728',
-    'tt0361748','tt1232829','tt0357413','tt1490017','tt2229499','tt4925292',
-    'tt0479884','tt0482571',
-  ],
-  'Horror': [
-    'tt1457767','tt5884052','tt1396484','tt7784604','tt0102926','tt0117571',
-    'tt5727208','tt0144084','tt7349950','tt1591095','tt2958890','tt3266566',
-    'tt0087182','tt0078748','tt8772262','tt2396566','tt4263482','tt0092099',
-    'tt0325980','tt0411951',
-  ],
-  'Romance': [
-    'tt3783958','tt0332280','tt2582782','tt1045658','tt4080728','tt0219822',
-    'tt0112471','tt3104988','tt1605783','tt0381681','tt5726616','tt0120338',
-    'tt2194499','tt7653254','tt2798920','tt2322441','tt0107302','tt2119532',
-    'tt1707386','tt3416742',
-  ],
-  'Sci-Fi': [
-    'tt0816692','tt1375666','tt0133093','tt0499549','tt2543164','tt2488496',
-    'tt1856101','tt0910970','tt3748528','tt2527336','tt0369610','tt0088247',
-    'tt0103064','tt0083658','tt0062622','tt1454468','tt3659388','tt3859448',
-    'tt5311514','tt4729430',
-  ],
-  'Thriller': [
-    'tt0114814','tt0110912','tt0209144','tt0477348','tt2267998','tt0264464',
-    'tt1807166','tt1130884','tt6751668','tt0137523','tt0114369','tt1375666',
-    'tt0407887','tt0364569','tt0110413','tt0116231','tt1568346','tt0119698',
-    'tt0443706','tt0482571',
-  ],
+const TMDB_IMG = 'https://image.tmdb.org/t/p/w300';
+
+const GENRE_IDS = {
+  'Trending Now': null,
+  'Action':       28,
+  'Comedy':       35,
+  'Horror':       27,
+  'Romance':      10749,
+  'Sci-Fi':       878,
+  'Thriller':     53,
 };
 
-function getPrimaryCountry(country = '') {
-  return country.split(',')[0].trim();
-}
+const GENRE_NAMES = {
+  28: 'Action', 12: 'Adventure', 16: 'Animation', 35: 'Comedy',
+  80: 'Crime', 99: 'Documentary', 18: 'Drama', 10751: 'Family',
+  14: 'Fantasy', 36: 'History', 27: 'Horror', 10402: 'Music',
+  9648: 'Mystery', 10749: 'Romance', 878: 'Sci-Fi', 10770: 'TV Movie',
+  53: 'Thriller', 10752: 'War', 37: 'Western',
+};
 
-const LS_PREFIX = 'kmv_';
-const LS_TTL    = 7 * 24 * 60 * 60 * 1000; // 7 days
+const LS_PREFIX = 'kmv_tmdb_';
+const LS_TTL    = 7 * 24 * 60 * 60 * 1000;
 
 function lsGet(key) {
   try {
@@ -67,6 +38,18 @@ function lsSet(key, data) {
   try { localStorage.setItem(LS_PREFIX + key, JSON.stringify({ ts: Date.now(), data })); } catch {}
 }
 
+function normalize(item) {
+  return {
+    id:         item.id,
+    Title:      item.title || item.name || '—',
+    Year:       item.release_date?.slice(0, 4) ?? '—',
+    imdbRating: item.vote_average ? item.vote_average.toFixed(1) : '—',
+    Poster:     item.poster_path ? `${TMDB_IMG}${item.poster_path}` : null,
+    Genre:      (item.genre_ids ?? []).slice(0, 2).map(id => GENRE_NAMES[id]).filter(Boolean).join(', ') || '—',
+    Type:       'movie',
+  };
+}
+
 export default function MovieGrid({ genre = 'Trending Now', searchQuery = '' }) {
   const [movies, setMovies]   = useState([]);
   const [loading, setLoading] = useState(true);
@@ -75,9 +58,9 @@ export default function MovieGrid({ genre = 'Trending Now', searchQuery = '' }) 
   const cache = useRef({});
 
   useEffect(() => {
-    const key = import.meta.env.VITE_OMDB_KEY;
+    const key = import.meta.env.VITE_TMDB_KEY;
     if (!key) {
-      setError('Add VITE_OMDB_KEY to your .env and restart the dev server.');
+      setError('Add VITE_TMDB_KEY to your .env and restart the dev server.');
       setLoading(false);
       return;
     }
@@ -105,60 +88,37 @@ export default function MovieGrid({ genre = 'Trending Now', searchQuery = '' }) 
     setMovies([]);
     setError(null);
 
+    const base = 'https://api.themoviedb.org/3';
+    let url;
+
     if (searchQuery) {
-      fetch(`https://www.omdbapi.com/?s=${encodeURIComponent(searchQuery)}&apikey=${key}`)
-        .then(r => r.json())
-        .then(data => {
-          if (data.Response === 'False') {
-            setError(data.Error === 'Movie not found!' ? 'No results found.' : `OMDB: ${data.Error}`);
-            setMovies([]);
-            setLoading(false);
-            return;
-          }
-          return Promise.all(
-            data.Search.map(item =>
-              fetch(`https://www.omdbapi.com/?i=${item.imdbID}&apikey=${key}`)
-                .then(r => r.json())
-            )
-          ).then(results => {
-            const valid = results.filter(m => m.Response === 'True');
-            cache.current[cacheKey] = valid;
-            lsSet(cacheKey, valid);
-            setMovies(valid);
-            setLoading(false);
-            setTimeout(() => setVisible(true), 30);
-          });
-        })
-        .catch(() => {
-          setError('Network error — check your connection.');
-          setLoading(false);
-        });
-      return;
+      url = `${base}/search/movie?api_key=${key}&query=${encodeURIComponent(searchQuery)}&language=en-US&page=1`;
+    } else if (genre === 'Trending Now') {
+      url = `${base}/trending/movie/week?api_key=${key}&language=en-US`;
+    } else {
+      const genreId = GENRE_IDS[genre];
+      url = `${base}/discover/movie?api_key=${key}&with_genres=${genreId}&sort_by=popularity.desc&language=en-US&page=1`;
     }
 
-    const ids = MOVIES_BY_GENRE[genre] ?? MOVIES_BY_GENRE['Trending Now'];
-
-    fetch(`https://www.omdbapi.com/?i=${ids[0]}&apikey=${key}`)
+    fetch(url)
       .then(r => r.json())
-      .then(probe => {
-        if (probe.Response === 'False') {
-          setError(`OMDB: ${probe.Error}`);
+      .then(data => {
+        if (data.success === false || !data.results) {
+          setError(data.status_message ?? 'Failed to load movies.');
           setLoading(false);
           return;
         }
-        return Promise.all(
-          ids.map(id =>
-            fetch(`https://www.omdbapi.com/?i=${id}&apikey=${key}`)
-              .then(r => r.json())
-          )
-        ).then(results => {
-          const valid = results.filter(m => m.Response === 'True');
-          cache.current[cacheKey] = valid;
-          lsSet(cacheKey, valid);
-          setMovies(valid);
+        if (data.results.length === 0) {
+          setError('No results found.');
           setLoading(false);
-          setTimeout(() => setVisible(true), 30);
-        });
+          return;
+        }
+        const results = data.results.slice(0, 20).map(normalize);
+        cache.current[cacheKey] = results;
+        lsSet(cacheKey, results);
+        setMovies(results);
+        setLoading(false);
+        setTimeout(() => setVisible(true), 30);
       })
       .catch(() => {
         setError('Network error — check your connection.');
@@ -205,54 +165,47 @@ export default function MovieGrid({ genre = 'Trending Now', searchQuery = '' }) 
         {searchQuery ? `Results for "${searchQuery}"` : genre}
       </h2>
       <div className={`mg-grid${visible ? ' mg-grid-visible' : ''}`}>
-        {movies.map((movie, i) => {
-          const isTV   = movie.Type === 'series';
-          const poster = movie.Poster !== 'N/A' ? movie.Poster : null;
-
-          return (
-            <div
-              key={movie.imdbID}
-              className="mg-card"
-              style={{ animationDelay: `${i * 0.04}s` }}
-            >
-              <div className="mg-poster">
-                {poster
-                  ? <img
-                      src={poster}
-                      alt={movie.Title}
-                      className="mg-poster-img"
-                      onError={e => {
-                        e.currentTarget.style.display = 'none';
-                        e.currentTarget.nextSibling.style.display = 'flex';
-                      }}
-                    />
-                  : null
-                }
-                <div
-                  className="mg-poster-fallback"
-                  style={{ display: poster ? 'none' : 'flex' }}
-                >
-                  <span className="mg-no-image">No Image</span>
-                </div>
-                {isTV && <span className="mg-type-badge">TV Series</span>}
-              </div>
-              <div className="mg-info">
-                <p className="mg-meta">
-                  {getPrimaryCountry(movie.Country)},&nbsp;
-                  <span className="mg-year">{movie.Year}</span>
-                </p>
-                <h3 className="mg-title">{movie.Title}</h3>
-                <div className="mg-ratings">
-                  <span className="mg-imdb-badge">
-                    <span className="mg-imdb-label">IMDb</span>
-                    <span className="mg-imdb-score">{movie.imdbRating}/10</span>
-                  </span>
-                </div>
-                <p className="mg-genre">{movie.Genre}</p>
+        {movies.map((movie, i) => (
+          <div
+            key={movie.id}
+            className="mg-card"
+            style={{ animationDelay: `${i * 0.04}s` }}
+          >
+            <div className="mg-poster">
+              {movie.Poster
+                ? <img
+                    src={movie.Poster}
+                    alt={movie.Title}
+                    className="mg-poster-img"
+                    onError={e => {
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.nextSibling.style.display = 'flex';
+                    }}
+                  />
+                : null
+              }
+              <div
+                className="mg-poster-fallback"
+                style={{ display: movie.Poster ? 'none' : 'flex' }}
+              >
+                <span className="mg-no-image">No Image</span>
               </div>
             </div>
-          );
-        })}
+            <div className="mg-info">
+              <p className="mg-meta">
+                <span className="mg-year">{movie.Year}</span>
+              </p>
+              <h3 className="mg-title">{movie.Title}</h3>
+              <div className="mg-ratings">
+                <span className="mg-imdb-badge">
+                  <span className="mg-imdb-label">TMDB</span>
+                  <span className="mg-imdb-score">{movie.imdbRating}/10</span>
+                </span>
+              </div>
+              <p className="mg-genre">{movie.Genre}</p>
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   );
