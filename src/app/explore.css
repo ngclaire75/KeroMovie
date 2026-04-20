@@ -574,6 +574,11 @@ a { text-decoration: none; color: inherit; }
     box-shadow: none;
   }
 
+  .h-search-icon {
+    width: 18px;
+    height: 18px;
+  }
+
   .h-search-input {
     width: 0;
     padding: 0;
