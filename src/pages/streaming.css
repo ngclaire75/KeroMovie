@@ -2,19 +2,61 @@
    STREAMING PLATFORMS PAGE
    ═══════════════════════════════════════════════ */
 
+/* ── GIF background ── */
+.sp-bg-gif {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.sp-bg-gif-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(6px);
+  transform: scale(1.08);
+  display: block;
+}
+
+.sp-bg-gif-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+}
+
 .sp-page {
-  min-height: 100vh;
-  background: #0d0d0d;
+  position: relative;
+  z-index: 1;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: transparent;
   display: flex;
   flex-direction: column;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   color: #fff;
 }
 
+.sp-page .h-nav {
+  background: transparent;
+  margin-top: 18px;
+}
+
 .sp-main {
   flex: 1;
   padding: 48px 52px 80px;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: row;
+  gap: 48px;
+  align-items: flex-start;
+}
+
+/* ── Left content area ── */
+.sp-content {
+  flex: 1;
+  min-width: 0;
 }
 
 /* ── Header ── */
@@ -40,78 +82,116 @@
 /* ── Grid ── */
 .sp-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 20px;
 }
 
 /* ── Card ── */
 .sp-card {
-  background: #1a1a1a;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 16px;
-  padding: 28px 20px 22px;
+  background: transparent;
+  border: none;
+  border-radius: 14px;
+  padding: 22px 18px 22px 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 14px;
+  align-items: flex-start;
+  justify-content: center;
   cursor: pointer;
   text-decoration: none;
   color: inherit;
-  transition: background 0.2s, border-color 0.2s, transform 0.2s;
+  transition: transform 0.2s;
   position: relative;
-  overflow: hidden;
+  min-height: 90px;
 }
 
 .sp-card:hover {
-  background: #242424;
-  border-color: rgba(220, 38, 38, 0.4);
-  transform: translateY(-4px);
+  transform: translateY(-3px);
 }
 
-.sp-card:hover .sp-visit {
-  opacity: 1;
-  transform: translateY(0);
+/* ── Card fade-in ── */
+@keyframes sp-card-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Logo ── */
-.sp-logo-wrap {
-  width: 80px;
-  height: 80px;
-  border-radius: 18px;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.06);
-  flex-shrink: 0;
-}
-
-.sp-logo {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  padding: 8px;
-}
-
-/* ── Name ── */
-.sp-name {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.75);
-  text-align: center;
-  line-height: 1.3;
-  letter-spacing: 0.01em;
-}
-
-/* ── Visit label ── */
-.sp-visit {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: #ef4444;
-  letter-spacing: 0.06em;
+.sp-card {
   opacity: 0;
-  transform: translateY(4px);
-  transition: opacity 0.2s, transform 0.2s;
+  animation: sp-card-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ── Platform name text ── */
+.sp-platform-name {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-align: left;
+  line-height: 1.3;
+  white-space: pre-line;
+  background: linear-gradient(135deg, #ffffff 0%, #888888 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Desktop filter sidebar ── */
+.sp-filter-sidebar {
+  width: 200px;
+  flex-shrink: 0;
+  padding-top: 6px;
+  position: sticky;
+  top: 48px;
+  align-self: flex-start;
+}
+
+.sp-filter-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.3);
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.sp-filter-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sp-filter-option {
+  background: none;
+  border: none;
+  padding: 6px 0;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.35);
+  transition: color 0.2s, font-size 0.2s;
+  white-space: nowrap;
+  display: block;
+  width: 100%;
+}
+
+.sp-filter-option:hover {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.sp-filter-option.active {
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* ── Mobile filter strip (hidden on desktop) ── */
+.sp-filter-strip {
+  display: none;
 }
 
 /* ── Skeleton ── */
@@ -130,23 +210,26 @@
   pointer-events: none;
 }
 
-.sp-card-skeleton .sp-logo-wrap {
-  background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
-  background-size: 800px 100%;
-  animation: sp-shimmer 1.4s linear infinite;
-}
-
-.sp-skeleton-text {
-  height: 12px;
-  width: 70%;
+.sp-skeleton-bar {
+  height: 14px;
+  width: 65%;
   border-radius: 999px;
-  color: transparent;
+  background: rgba(255,255,255,0.12);
 }
 
 /* ── Mobile ── */
 @media (max-width: 768px) {
+  .sp-page {
+    height: 100dvh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .sp-main {
     padding: 28px 18px 60px;
+    flex-direction: column;
+    gap: 0;
   }
 
   .sp-header {
@@ -154,24 +237,83 @@
   }
 
   .sp-grid {
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 14px;
   }
 
   .sp-card {
-    padding: 22px 14px 18px;
-    border-radius: 14px;
-    gap: 10px;
+    padding: 18px 14px 18px 0;
+    min-height: 74px;
+    border-radius: 12px;
+    align-items: flex-start;
   }
 
-  .sp-logo-wrap {
-    width: 64px;
-    height: 64px;
-    border-radius: 14px;
+  .sp-platform-name {
+    font-size: 1rem;
+    text-align: left;
   }
 
-  .sp-visit {
+  /* Hide desktop sidebar on mobile */
+  .sp-filter-sidebar {
+    display: none;
+  }
+
+  /* Show mobile pill strip */
+  .sp-filter-strip {
+    margin-top: 14px;
+    display: flex;
+    gap: 6px;
+    padding: 10px 16px 10px 14px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    flex-shrink: 0;
+    -webkit-overflow-scrolling: touch;
+    background: transparent;
+  }
+
+  .sp-filter-strip::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sp-filter-pill {
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #9e8a8a;
+    border-radius: 999px;
+    padding: 7px 16px;
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: color 0.3s ease, box-shadow 0.3s ease,
+                background 0.3s ease, border-color 0.3s ease;
+    touch-action: pan-x;
+    cursor: pointer;
+  }
+
+  .sp-filter-pill::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #dc2626, #7f1d1d);
+    opacity: 0;
+    transform: scale(0.85);
+    transition: opacity 0.35s ease, transform 0.35s ease;
+    z-index: -1;
+  }
+
+  .sp-filter-pill.active::before {
     opacity: 1;
-    transform: translateY(0);
+    transform: scale(1);
+  }
+
+  .sp-filter-pill.active {
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 0 10px rgba(220, 38, 38, 0.45);
   }
 }
