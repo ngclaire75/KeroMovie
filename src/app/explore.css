@@ -120,6 +120,8 @@ a { text-decoration: none; color: inherit; }
   align-items: center;
   padding: 0 40px 0 52px;
   height: 70px;
+  background: var(--bg);
+  border-bottom: none;
 }
 
 .h-logo {
@@ -356,6 +358,7 @@ a { text-decoration: none; color: inherit; }
     scrollbar-width: none;
     flex-shrink: 0;
     -webkit-overflow-scrolling: touch;
+    background: #000000;
   }
 
   .mobile-genre-strip::-webkit-scrollbar {

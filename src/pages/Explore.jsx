@@ -52,7 +52,7 @@ export default function Explore() {
             <a href="#">Explore</a>
           </li>
           <li className="h-nav-item">
-            <Link to="/browse">Movies</Link>
+            <Link to="/browse">Dashboard</Link>
           </li>
           <li className="h-nav-item">
             <Link to="/forums">Forum</Link>
