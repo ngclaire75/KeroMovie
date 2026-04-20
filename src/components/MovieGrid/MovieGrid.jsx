@@ -23,6 +23,7 @@ const GENRE_NAMES = {
 
 const LS_PREFIX = 'kmv_tmdb_';
 const LS_TTL    = 7 * 24 * 60 * 60 * 1000;
+const PAGES     = 5; // 5 pages × 20 = up to 100 movies per genre
 
 function lsGet(key) {
   try {
@@ -46,8 +47,26 @@ function normalize(item) {
     imdbRating: item.vote_average ? item.vote_average.toFixed(1) : '—',
     Poster:     item.poster_path ? `${TMDB_IMG}${item.poster_path}` : null,
     Genre:      (item.genre_ids ?? []).slice(0, 2).map(id => GENRE_NAMES[id]).filter(Boolean).join(', ') || '—',
-    Type:       'movie',
   };
+}
+
+async function fetchPages(baseUrl, pageCount) {
+  const responses = await Promise.all(
+    Array.from({ length: pageCount }, (_, i) =>
+      fetch(`${baseUrl}&page=${i + 1}`).then(r => r.json())
+    )
+  );
+
+  const seen = new Set();
+  return responses
+    .flatMap(data => data.results ?? [])
+    .filter(item => {
+      if (item.adult) return false;        // exclude 18+
+      if (!item.poster_path) return false; // skip no-poster entries
+      if (seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    });
 }
 
 export default function MovieGrid({ genre = 'Trending Now', searchQuery = '' }) {
@@ -60,7 +79,7 @@ export default function MovieGrid({ genre = 'Trending Now', searchQuery = '' }) 
   useEffect(() => {
     const key = import.meta.env.VITE_TMDB_KEY;
     if (!key) {
-      setError('Add VITE_TMDB_KEY to your .env and restart the dev server.');
+      setError('No API key found.');
       setLoading(false);
       return;
     }
@@ -88,32 +107,28 @@ export default function MovieGrid({ genre = 'Trending Now', searchQuery = '' }) 
     setMovies([]);
     setError(null);
 
-    const base = 'https://api.themoviedb.org/3';
-    let url;
+    const base  = 'https://api.themoviedb.org/3';
+    const safe  = `include_adult=false&language=en-US`;
+
+    let baseUrl;
 
     if (searchQuery) {
-      url = `${base}/search/movie?api_key=${key}&query=${encodeURIComponent(searchQuery)}&language=en-US&page=1`;
+      baseUrl = `${base}/search/movie?api_key=${key}&${safe}&query=${encodeURIComponent(searchQuery)}`;
     } else if (genre === 'Trending Now') {
-      url = `${base}/trending/movie/week?api_key=${key}&language=en-US`;
+      baseUrl = `${base}/trending/movie/week?api_key=${key}&${safe}`;
     } else {
       const genreId = GENRE_IDS[genre];
-      url = `${base}/discover/movie?api_key=${key}&with_genres=${genreId}&sort_by=popularity.desc&language=en-US&page=1`;
+      baseUrl = `${base}/discover/movie?api_key=${key}&${safe}&with_genres=${genreId}&sort_by=popularity.desc&vote_count.gte=50`;
     }
 
-    fetch(url)
-      .then(r => r.json())
-      .then(data => {
-        if (data.success === false || !data.results) {
-          setError(data.status_message ?? 'Failed to load movies.');
-          setLoading(false);
-          return;
-        }
-        if (data.results.length === 0) {
+    fetchPages(baseUrl, searchQuery ? 2 : PAGES)
+      .then(items => {
+        if (items.length === 0) {
           setError('No results found.');
           setLoading(false);
           return;
         }
-        const results = data.results.slice(0, 20).map(normalize);
+        const results = items.map(normalize);
         cache.current[cacheKey] = results;
         lsSet(cacheKey, results);
         setMovies(results);
@@ -131,7 +146,7 @@ export default function MovieGrid({ genre = 'Trending Now', searchQuery = '' }) 
       <section className="mg-section">
         <div className="mg-heading mg-skeleton mg-skeleton-heading" />
         <div className="mg-grid mg-grid-skeleton">
-          {Array.from({ length: 12 }).map((_, i) => (
+          {Array.from({ length: 20 }).map((_, i) => (
             <div key={i} className="mg-card">
               <div className="mg-poster mg-skeleton" />
               <div className="mg-info">
