@@ -120,8 +120,8 @@ export default function Home() {
           <li><Link to="/browse" className="hp-nav-link">Dashboard</Link></li>
           <li><Link to="/forums" className="hp-nav-link">Forum</Link></li>
         </ul>
-        <button className="hp-nav-cta" onClick={() => navigate('/explore')}>
-          Discover Movie Streaming Platform
+        <button className="hp-nav-cta" onClick={() => navigate('/streaming')}>
+          Discover Movie Streaming Platforms
         </button>
       </nav>
 
