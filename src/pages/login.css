@@ -276,8 +276,9 @@
   color: #fff;
   font-size: 0.85rem;
   font-weight: 600;
-  white-space: nowrap;
-  max-width: 90vw;
+  white-space: normal;
+  width: max-content;
+  max-width: min(90vw, 420px);
   text-align: center;
   box-shadow: 0 8px 32px rgba(231, 76, 60, 0.45);
   pointer-events: none;
@@ -472,6 +473,8 @@
 @media (max-width: 768px) {
   .lp-page {
     min-height: 100dvh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .lp-nav {
@@ -481,7 +484,7 @@
   .lp-layout {
     flex-direction: column;
     align-items: stretch;
-    padding: 24px 6% 40px;
+    padding: 24px 6% 80px;
     gap: 0;
     position: relative;
     row-gap: 0;
@@ -492,25 +495,6 @@
     max-width: 100%;
     position: relative;
     z-index: 2;
-  }
-
-  .lp-right {
-    position: fixed;
-    right: -10%;
-    bottom: 0;
-    width: 55%;
-    height: auto;
-    justify-content: flex-end;
-    align-items: flex-end;
-    z-index: 1;
-    pointer-events: none;
-    overflow: visible;
-  }
-
-  .lp-character {
-    height: 52vw;
-    max-height: none;
-    opacity: 0.35;
   }
 
   .lp-heading {
@@ -536,4 +520,25 @@
     gap: 6px;
     margin-top: 16px;
   }
+
+  .lp-toast {
+    bottom: max(24px, env(safe-area-inset-bottom, 24px));
+    left: 16px;
+    right: 16px;
+    transform: translateY(16px);
+    width: auto;
+    max-width: 100%;
+    font-size: 0.82rem;
+    padding: 12px 20px;
+    box-sizing: border-box;
+  }
+
+  .lp-toast.lp-toast-show {
+    animation: lp-toast-in-mobile 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+}
+
+@keyframes lp-toast-in-mobile {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
