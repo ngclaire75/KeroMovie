@@ -715,10 +715,10 @@
     position: relative;
     height: auto;
     padding: 3.2vw 4vw 2.4vw;
-    padding-top: 8vw;
+    padding-top: 4vw;
     flex-direction: column;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
     gap: 2vw;
     margin-top: 0;
   }
@@ -726,9 +726,10 @@
   .hp-nav-links {
     margin-left: 0;
     margin-right: 0;
-    justify-content: center;
+    justify-content: flex-start;
     flex-wrap: wrap;
-    gap: 1vw;
+    gap: 5vw;
+    width: 100%;
   }
 
   .hp-nav-link {
@@ -739,7 +740,8 @@
   .hp-nav-cta {
     font-size: clamp(0.7rem, 3vw, 0.78rem);
     padding: 1.8vw 4.2vw;
-    margin-top: 0;
+    margin-top: 3vw;
+    align-self: center;
   }
 
   .hp-login-icon {
