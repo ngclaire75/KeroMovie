@@ -88,6 +88,17 @@ export async function signIn({ email, password }) {
   }
 }
 
+function normaliseOAuthError(err) {
+  if (err.code === 'auth/unauthorized-domain') {
+    throw new Error('This domain is not authorised in Firebase. Add it under Authentication → Settings → Authorized domains.');
+  }
+  const msg = err.message?.toLowerCase() ?? '';
+  if (msg.includes('illegal') || msg.includes('iframe')) {
+    throw new Error('Redirection not found.');
+  }
+  throw err;
+}
+
 // ── Google Sign In ───────────────────────────────────────────
 export async function signInWithGoogle() {
   try {
@@ -99,10 +110,7 @@ export async function signInWithGoogle() {
       await signInWithRedirect(auth, googleProvider);
       return null;
     }
-    if (err.code === 'auth/unauthorized-domain') {
-      throw new Error('This domain is not authorised in Firebase. Add it under Authentication → Settings → Authorized domains.');
-    }
-    throw err;
+    normaliseOAuthError(err);
   }
 }
 
@@ -117,10 +125,7 @@ export async function signInWithApple() {
       await signInWithRedirect(auth, appleProvider);
       return null;
     }
-    if (err.code === 'auth/unauthorized-domain') {
-      throw new Error('This domain is not authorised in Firebase. Add it under Authentication → Settings → Authorized domains.');
-    }
-    throw err;
+    normaliseOAuthError(err);
   }
 }
 
