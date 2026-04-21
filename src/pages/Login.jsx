@@ -48,13 +48,11 @@ export default function Login() {
   const [foundUsername, setFoundUsername] = useState('');
   const [form, setForm] = useState({ firstName: '', lastName: '', username: '', email: '', password: '' });
 
-  // Handle Google/Apple redirect result on mount
+  // Handle redirect result on mount (fallback for popup-blocked browsers)
   useEffect(() => {
-    setLoading(true);
     checkRedirectResult()
       .then(user => { if (user) navigate('/browse'); })
-      .catch(e => setError(e.message || 'Sign-in failed.'))
-      .finally(() => setLoading(false));
+      .catch(e => setError(e.message || 'Sign-in failed.'));
   }, []);
 
   // Toast display
@@ -74,9 +72,12 @@ export default function Login() {
   async function handleOAuth(fn) {
     reset(); setLoading(true);
     try {
-      await fn(); // triggers redirect — page will reload
+      const user = await fn();
+      if (user) navigate('/browse');
+      // null means redirect was triggered — page will reload
     } catch (e) {
       setError(e.message || 'Sign-in failed. Please try again.');
+    } finally {
       setLoading(false);
     }
   }

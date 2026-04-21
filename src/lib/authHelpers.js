@@ -1,6 +1,7 @@
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
   sendEmailVerification,
@@ -84,14 +85,40 @@ export async function signIn({ email, password }) {
   }
 }
 
-// ── Google Sign In (redirect) ────────────────────────────────
+// ── Google Sign In ───────────────────────────────────────────
 export async function signInWithGoogle() {
-  await signInWithRedirect(auth, googleProvider);
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    await saveProfile(result.user, { provider: 'google' });
+    return result.user;
+  } catch (err) {
+    if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user') {
+      await signInWithRedirect(auth, googleProvider);
+      return null;
+    }
+    if (err.code === 'auth/unauthorized-domain') {
+      throw new Error('This domain is not authorised in Firebase. Add it under Authentication → Settings → Authorized domains.');
+    }
+    throw err;
+  }
 }
 
-// ── Apple Sign In (redirect) ─────────────────────────────────
+// ── Apple Sign In ────────────────────────────────────────────
 export async function signInWithApple() {
-  await signInWithRedirect(auth, appleProvider);
+  try {
+    const result = await signInWithPopup(auth, appleProvider);
+    await saveProfile(result.user, { provider: 'apple' });
+    return result.user;
+  } catch (err) {
+    if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user') {
+      await signInWithRedirect(auth, appleProvider);
+      return null;
+    }
+    if (err.code === 'auth/unauthorized-domain') {
+      throw new Error('This domain is not authorised in Firebase. Add it under Authentication → Settings → Authorized domains.');
+    }
+    throw err;
+  }
 }
 
 // ── Forgot Password ──────────────────────────────────────────
