@@ -254,6 +254,41 @@
   transform: none;
 }
 
+/* ── Toast error pill ── */
+@keyframes lp-toast-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(16px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+@keyframes lp-toast-out {
+  from { opacity: 1; transform: translateX(-50%) translateY(0); }
+  to   { opacity: 0; transform: translateX(-50%) translateY(16px); }
+}
+
+.lp-toast {
+  position: fixed;
+  bottom: 36px;
+  left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  z-index: 999;
+  padding: 13px 28px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #e74c3c 0%, #1a0000 100%);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  max-width: 90vw;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(231, 76, 60, 0.45);
+  pointer-events: none;
+  opacity: 0;
+  animation: lp-toast-out 0.35s ease forwards;
+}
+
+.lp-toast.lp-toast-show {
+  animation: lp-toast-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
 .lp-error {
   font-size: 0.82rem;
   color: #ff6b6b;

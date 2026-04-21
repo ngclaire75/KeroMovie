@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import logo from '../../images/keromovielogo.png';
 import bgGif from '../../images/loginbackground.gif';
@@ -37,10 +37,21 @@ const SocialButtons = ({ onGoogle, onApple, loading }) => (
 
 export default function Login() {
   const navigate = useNavigate();
-  const [view, setView]       = useState('signup'); // signup | login | forgot-password | forgot-username | verify-email | sent | username-found
+  const [view, setView]       = useState('signup');
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
   const [info, setInfo]       = useState('');
+  const [toast, setToast]     = useState('');
+  const [toastVisible, setToastVisible] = useState(false);
+
+  useEffect(() => {
+    if (!error) return;
+    setToast(error);
+    setToastVisible(true);
+    const hide = setTimeout(() => setToastVisible(false), 4000);
+    const clear = setTimeout(() => { setToast(''); setError(''); }, 4400);
+    return () => { clearTimeout(hide); clearTimeout(clear); };
+  }, [error]);
   const [foundUsername, setFoundUsername] = useState('');
   const [form, setForm] = useState({ firstName: '', lastName: '', username: '', email: '', password: '' });
 
@@ -192,7 +203,6 @@ export default function Login() {
                       <input className="lp-input" name="password" type="password" value={form.password} onChange={change} placeholder="Password" autoComplete="new-password" required />
                     </div>
                   </div>
-                  {error && <p className="lp-error">{error}</p>}
                   <button type="submit" className="lp-btn" disabled={loading}>{loading ? 'Creating…' : 'Create Account'}</button>
                   <SocialButtons onGoogle={() => handleOAuth(signInWithGoogle)} onApple={() => handleOAuth(signInWithApple)} loading={loading} />
                 </form>
@@ -222,17 +232,6 @@ export default function Login() {
                       <input className="lp-input" name="password" type="password" value={form.password} onChange={change} placeholder="Password" autoComplete="current-password" required />
                     </div>
                   </div>
-                  {error && (
-                    <p className="lp-error">
-                      {error}
-                      {error.includes('Incorrect password') && (
-                        <> {' — '}<button type="button" className="lp-switch-btn" onClick={() => go('forgot-password')}>Forgot password?</button></>
-                      )}
-                      {error.includes('No account') && (
-                        <> {' — '}<button type="button" className="lp-switch-btn" onClick={() => go('signup')}>Create account</button></>
-                      )}
-                    </p>
-                  )}
                   <div className="lp-forgot-row">
                     <button type="button" className="lp-link-btn" onClick={() => go('forgot-password')}>Forgot password?</button>
                     <button type="button" className="lp-link-btn" onClick={() => go('forgot-username')}>Forgot username?</button>
@@ -260,7 +259,6 @@ export default function Login() {
                       <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 8l10 6 10-6"/></svg>
                     </div>
                   </div>
-                  {error && <p className="lp-error">{error}</p>}
                   <button type="submit" className="lp-btn" disabled={loading}>{loading ? 'Sending…' : 'Send Reset Email'}</button>
                 </form>
               </>
@@ -298,8 +296,7 @@ export default function Login() {
                   We've sent a verification link to <strong>{form.email}</strong>.<br />
                   Click the link to activate your account before logging in.
                 </p>
-                {error && <p className="lp-error">{error}</p>}
-                {info  && <p className="lp-info">{info}</p>}
+                {info && <p className="lp-info">{info}</p>}
                 <div className="lp-form" style={{ marginTop: '20px' }}>
                   <button type="button" className="lp-btn" onClick={handleResend} disabled={loading}>{loading ? 'Sending…' : 'Resend Verification Email'}</button>
                   <button type="button" className="lp-link-btn" style={{ marginTop: 12 }} onClick={() => go('login')}>Back to Log In</button>
@@ -344,7 +341,6 @@ export default function Login() {
             <div className="lp-social-box">
               <p className="lp-social-title">Or continue with</p>
               <div className="lp-social-divider" />
-              {error && <p className="lp-error" style={{ fontSize: '0.78rem', textAlign: 'center' }}>{error}</p>}
               <button type="button" className="lp-social-btn" onClick={() => handleOAuth(signInWithGoogle)} disabled={loading}>
                 <GoogleIcon /> Sign in with Google
               </button>
@@ -356,6 +352,13 @@ export default function Login() {
 
         </div>
       </div>
+
+      {/* Toast error pill */}
+      {toast && (
+        <div className={`lp-toast${toastVisible ? ' lp-toast-show' : ''}`}>
+          {toast}
+        </div>
+      )}
     </>
   );
 }
