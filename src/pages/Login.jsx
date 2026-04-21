@@ -48,6 +48,16 @@ export default function Login() {
   const [foundUsername, setFoundUsername] = useState('');
   const [form, setForm] = useState({ firstName: '', lastName: '', username: '', email: '', password: '' });
 
+  // Allow document scroll on login page (overrides explore.css height:100% on html/body)
+  useEffect(() => {
+    document.documentElement.classList.add('lp-scroll-unlock');
+    document.body.classList.add('lp-scroll-unlock');
+    return () => {
+      document.documentElement.classList.remove('lp-scroll-unlock');
+      document.body.classList.remove('lp-scroll-unlock');
+    };
+  }, []);
+
   // Handle redirect result on mount (fallback for popup-blocked browsers)
   useEffect(() => {
     checkRedirectResult()

@@ -469,14 +469,20 @@
   filter: drop-shadow(0 8px 24px rgba(0,0,0,0.4));
 }
 
+/* ── Scroll unlock for login page (overrides explore.css html/body height:100%) ── */
+html.lp-scroll-unlock,
+body.lp-scroll-unlock {
+  height: auto !important;
+  min-height: 100% !important;
+  overflow-y: auto !important;
+}
+
 /* ── Mobile ── */
 @media (max-width: 768px) {
   .lp-page {
-    height: 100vh;
-    height: 100dvh;
-    overflow-y: scroll;
-    -webkit-overflow-scrolling: touch;
-    touch-action: pan-y;
+    min-height: 100dvh;
+    height: auto;
+    overflow-y: visible;
   }
 
   .lp-nav {
@@ -501,6 +507,11 @@
 
   .lp-heading {
     font-size: clamp(1.5rem, 7vw, 2rem);
+  }
+
+  /* Prevent iOS auto-zoom on input focus (requires font-size >= 16px) */
+  .lp-input {
+    font-size: 16px;
   }
 
   .lp-row {
