@@ -4,16 +4,20 @@ import Home from '../pages/Home';
 import Explore from '../pages/Explore';
 import Forums from '../pages/Forums';
 import Streaming from '../pages/Streaming';
+import Login from '../pages/Login';
+import ResetPassword from '../pages/ResetPassword';
 
 export default function App() {
   return (
     <AppProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/"        element={<Home />} />
-          <Route path="/explore" element={<Explore />} />
-          <Route path="/forums"    element={<Forums />} />
-          <Route path="/streaming" element={<Streaming />} />
+          <Route path="/"               element={<Home />} />
+          <Route path="/explore"        element={<Explore />} />
+          <Route path="/forums"         element={<Forums />} />
+          <Route path="/streaming"      element={<Streaming />} />
+          <Route path="/login"          element={<Login />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
         </Routes>
       </BrowserRouter>
     </AppProvider>

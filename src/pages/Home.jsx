@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import logo from '../../images/keromovielogo.png';
+import loginIcon from '../../images/login.png';
 import bgGif from '../../images/background.gif';
 import './home.css';
 
@@ -123,7 +124,9 @@ export default function Home() {
         <button className="hp-nav-cta" onClick={() => navigate('/streaming')}>
           Discover Movie Streaming Platforms
         </button>
+        <Link to="/login"><img src={loginIcon} alt="Login" className="hp-login-icon" /></Link>
       </nav>
+      <Link to="/login"><img src={loginIcon} alt="Login" className="hp-login-icon-mobile" /></Link>
 
       <canvas ref={canvasRef} className="hp-canvas" />
 
