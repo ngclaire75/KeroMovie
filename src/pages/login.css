@@ -536,28 +536,18 @@ body.lp-scroll-unlock {
 
   .lp-toast {
     bottom: max(24px, env(safe-area-inset-bottom, 24px));
-    left: 16px;
-    right: 16px;
-    transform: translateY(16px);
-    width: auto;
-    max-width: 100%;
+    left: 50%;
+    right: auto;
+    width: max-content;
+    max-width: calc(100vw - 32px);
     font-size: 0.82rem;
     padding: 12px 20px;
     box-sizing: border-box;
-    animation: lp-toast-out-mobile 0.35s ease forwards;
+    transform: translateX(-50%) translateY(16px);
+    animation: lp-toast-out 0.35s ease forwards;
   }
 
   .lp-toast.lp-toast-show {
-    animation: lp-toast-in-mobile 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    animation: lp-toast-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   }
-}
-
-@keyframes lp-toast-in-mobile {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes lp-toast-out-mobile {
-  from { opacity: 1; transform: translateY(0); }
-  to   { opacity: 0; transform: translateY(16px); }
 }

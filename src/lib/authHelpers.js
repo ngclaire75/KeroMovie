@@ -47,6 +47,9 @@ export async function checkRedirectResult() {
     if (err.code === 'auth/unauthorized-domain') {
       throw new Error('This domain is not authorised in Firebase. Add it under Authentication → Settings → Authorized domains.');
     }
+    if (err.message?.toLowerCase().includes('illegal') || err.message?.toLowerCase().includes('iframe')) {
+      throw new Error('Redirection not found.');
+    }
     throw err;
   }
 }
