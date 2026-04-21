@@ -6,6 +6,7 @@ import Forums from '../pages/Forums';
 import Streaming from '../pages/Streaming';
 import Login from '../pages/Login';
 import ResetPassword from '../pages/ResetPassword';
+import Dashboard from '../pages/Dashboard';
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
           <Route path="/streaming"      element={<Streaming />} />
           <Route path="/login"          element={<Login />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/browse"         element={<Dashboard />} />
         </Routes>
       </BrowserRouter>
     </AppProvider>
