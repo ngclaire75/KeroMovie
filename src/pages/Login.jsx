@@ -78,7 +78,13 @@ export default function Login() {
   }
 
   async function handleSignUp(e) {
-    e.preventDefault(); reset(); setLoading(true);
+    e.preventDefault(); reset();
+    if (!form.firstName.trim()) { setError('Please enter your first name.'); return; }
+    if (!form.lastName.trim())  { setError('Please enter your last name.'); return; }
+    if (!form.username.trim())  { setError('Please enter a username.'); return; }
+    if (!form.email.trim())     { setError('Please enter your email.'); return; }
+    if (!form.password)         { setError('Please enter a password.'); return; }
+    setLoading(true);
     try {
       await signUp(form);
       go('verify-email');
@@ -88,7 +94,10 @@ export default function Login() {
   }
 
   async function handleSignIn(e) {
-    e.preventDefault(); reset(); setLoading(true);
+    e.preventDefault(); reset();
+    if (!form.email.trim()) { setError('Please enter your email.'); return; }
+    if (!form.password)     { setError('Please enter your password.'); return; }
+    setLoading(true);
     try {
       await signIn({ email: form.email, password: form.password });
       navigate('/browse');
@@ -101,7 +110,9 @@ export default function Login() {
   }
 
   async function handleForgotPassword(e) {
-    e.preventDefault(); reset(); setLoading(true);
+    e.preventDefault(); reset();
+    if (!form.email.trim()) { setError('Please enter your email.'); return; }
+    setLoading(true);
     try {
       await forgotPassword(form.email);
       setInfo('Password reset email sent! Check your inbox.');
@@ -113,7 +124,9 @@ export default function Login() {
   }
 
   async function handleForgotUsername(e) {
-    e.preventDefault(); reset(); setLoading(true);
+    e.preventDefault(); reset();
+    if (!form.email.trim()) { setError('Please enter your email.'); return; }
+    setLoading(true);
     try {
       const username = await forgotUsername(form.email);
       setFoundUsername(username);
@@ -166,19 +179,19 @@ export default function Login() {
                   Already a member?{' '}
                   <button className="lp-switch-btn" onClick={() => go('login')}>Log In</button>
                 </p>
-                <form className="lp-form" onSubmit={handleSignUp}>
+                <form className="lp-form" onSubmit={handleSignUp} noValidate>
                   <div className="lp-row">
                     <div className="lp-field">
                       <label className="lp-label">First name</label>
                       <div className="lp-input-wrap">
-                        <input className="lp-input" name="firstName" value={form.firstName} onChange={change} placeholder="First name" autoComplete="given-name" required />
+                        <input className="lp-input" name="firstName" value={form.firstName} onChange={change} placeholder="First name" autoComplete="given-name" />
                         <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
                       </div>
                     </div>
                     <div className="lp-field">
                       <label className="lp-label">Last name</label>
                       <div className="lp-input-wrap">
-                        <input className="lp-input" name="lastName" value={form.lastName} onChange={change} placeholder="Last name" autoComplete="family-name" required />
+                        <input className="lp-input" name="lastName" value={form.lastName} onChange={change} placeholder="Last name" autoComplete="family-name" />
                         <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
                       </div>
                     </div>
@@ -186,21 +199,21 @@ export default function Login() {
                   <div className="lp-field">
                     <label className="lp-label">Username</label>
                     <div className="lp-input-wrap">
-                      <input className="lp-input" name="username" value={form.username} onChange={change} placeholder="Username" autoComplete="username" required />
+                      <input className="lp-input" name="username" value={form.username} onChange={change} placeholder="Username" autoComplete="username" />
                       <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
                     </div>
                   </div>
                   <div className="lp-field">
                     <label className="lp-label">Email</label>
                     <div className="lp-input-wrap">
-                      <input className="lp-input" name="email" type="email" value={form.email} onChange={change} placeholder="Email" autoComplete="email" required />
+                      <input className="lp-input" name="email" type="email" value={form.email} onChange={change} placeholder="Email" autoComplete="email" />
                       <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 8l10 6 10-6"/></svg>
                     </div>
                   </div>
                   <div className="lp-field">
                     <label className="lp-label">Password</label>
                     <div className="lp-input-wrap">
-                      <input className="lp-input" name="password" type="password" value={form.password} onChange={change} placeholder="Password" autoComplete="new-password" required />
+                      <input className="lp-input" name="password" type="password" value={form.password} onChange={change} placeholder="Password" autoComplete="new-password" />
                     </div>
                   </div>
                   <button type="submit" className="lp-btn" disabled={loading}>{loading ? 'Creating…' : 'Create Account'}</button>
@@ -218,18 +231,18 @@ export default function Login() {
                   Not a member?{' '}
                   <button className="lp-switch-btn" onClick={() => go('signup')}>Sign Up</button>
                 </p>
-                <form className="lp-form" onSubmit={handleSignIn}>
+                <form className="lp-form" onSubmit={handleSignIn} noValidate>
                   <div className="lp-field">
                     <label className="lp-label">Email</label>
                     <div className="lp-input-wrap">
-                      <input className="lp-input" name="email" type="email" value={form.email} onChange={change} placeholder="Email" autoComplete="email" required />
+                      <input className="lp-input" name="email" type="email" value={form.email} onChange={change} placeholder="Email" autoComplete="email" />
                       <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 8l10 6 10-6"/></svg>
                     </div>
                   </div>
                   <div className="lp-field">
                     <label className="lp-label">Password</label>
                     <div className="lp-input-wrap">
-                      <input className="lp-input" name="password" type="password" value={form.password} onChange={change} placeholder="Password" autoComplete="current-password" required />
+                      <input className="lp-input" name="password" type="password" value={form.password} onChange={change} placeholder="Password" autoComplete="current-password" />
                     </div>
                   </div>
                   <div className="lp-forgot-row">
@@ -251,11 +264,11 @@ export default function Login() {
                   Remembered it?{' '}
                   <button className="lp-switch-btn" onClick={() => go('login')}>Back to Log In</button>
                 </p>
-                <form className="lp-form" onSubmit={handleForgotPassword}>
+                <form className="lp-form" onSubmit={handleForgotPassword} noValidate>
                   <div className="lp-field">
                     <label className="lp-label">Email</label>
                     <div className="lp-input-wrap">
-                      <input className="lp-input" name="email" type="email" value={form.email} onChange={change} placeholder="Your email address" autoComplete="email" required />
+                      <input className="lp-input" name="email" type="email" value={form.email} onChange={change} placeholder="Your email address" autoComplete="email" />
                       <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 8l10 6 10-6"/></svg>
                     </div>
                   </div>
@@ -273,11 +286,11 @@ export default function Login() {
                   Remembered it?{' '}
                   <button className="lp-switch-btn" onClick={() => go('login')}>Back to Log In</button>
                 </p>
-                <form className="lp-form" onSubmit={handleForgotUsername}>
+                <form className="lp-form" onSubmit={handleForgotUsername} noValidate>
                   <div className="lp-field">
                     <label className="lp-label">Email</label>
                     <div className="lp-input-wrap">
-                      <input className="lp-input" name="email" type="email" value={form.email} onChange={change} placeholder="Your email address" autoComplete="email" required />
+                      <input className="lp-input" name="email" type="email" value={form.email} onChange={change} placeholder="Your email address" autoComplete="email" />
                       <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 8l10 6 10-6"/></svg>
                     </div>
                   </div>
