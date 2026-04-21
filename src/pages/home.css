@@ -264,16 +264,22 @@
   cursor: pointer;
   padding: 0;
   transition: transform 0.15s, box-shadow 0.15s;
+  will-change: transform;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.hp-phone-badge:hover {
-  transform: scale(1.08);
-  box-shadow: 0 0 18px rgba(192,57,43,0.8);
+@media (hover: hover) and (pointer: fine) {
+  .hp-phone-badge:hover {
+    transform: scale(1.08);
+    box-shadow: 0 0 18px rgba(192,57,43,0.8);
+  }
 }
 
 .hp-phone-badge svg {
   display: block;
-  margin: auto;
+  flex-shrink: 0;
+  width: 11px;
+  height: 11px;
 }
 
 @keyframes hp-portrait-fade {
@@ -715,6 +721,7 @@
 
   /* ── Overlays ── */
   .hp-dots-overlay {
+    display: none;
     width: 60%;
     height: 40%;
     background-image: radial-gradient(circle, rgba(0,0,0,0.7) 2.5px, transparent 2.5px);
@@ -768,6 +775,11 @@
   .hp-phone-badge {
     width: 7.9vw;
     height: 7.9vw;
+    min-width: 32px;
+    min-height: 32px;
+    max-width: 42px;
+    max-height: 42px;
+    transition: none;
   }
 
   .hp-upper-sub  { font-size: clamp(0.62rem, 2.7vw, 0.72rem); }
