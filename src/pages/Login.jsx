@@ -54,7 +54,15 @@ export default function Login() {
       await fn();
       navigate('/browse');
     } catch (e) {
-      setError(e.message || 'Sign-in failed. Please try again.');
+      if (e.code === 'auth/popup-blocked') {
+        setError('Popup was blocked. Please allow popups for this site and try again.');
+      } else if (e.code === 'auth/unauthorized-domain') {
+        setError('This domain is not authorised in Firebase. Add it under Authentication → Settings → Authorized domains.');
+      } else if (e.code === 'auth/popup-closed-by-user') {
+        setError('Sign-in window was closed. Please try again.');
+      } else {
+        setError(e.message || 'Sign-in failed. Please try again.');
+      }
     } finally { setLoading(false); }
   }
 
@@ -336,6 +344,7 @@ export default function Login() {
             <div className="lp-social-box">
               <p className="lp-social-title">Or continue with</p>
               <div className="lp-social-divider" />
+              {error && <p className="lp-error" style={{ fontSize: '0.78rem', textAlign: 'center' }}>{error}</p>}
               <button type="button" className="lp-social-btn" onClick={() => handleOAuth(signInWithGoogle)} disabled={loading}>
                 <GoogleIcon /> Sign in with Google
               </button>
