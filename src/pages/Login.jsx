@@ -5,6 +5,7 @@ import bgGif from '../../images/loginbackground.gif';
 import {
   signUp, signIn, signInWithGoogle, signInWithApple,
   forgotPassword, forgotUsername, resendVerification,
+  checkRedirectResult,
 } from '../lib/authHelpers';
 import './login.css';
 
@@ -44,16 +45,27 @@ export default function Login() {
   const [toast, setToast]     = useState('');
   const [toastVisible, setToastVisible] = useState(false);
 
+  const [foundUsername, setFoundUsername] = useState('');
+  const [form, setForm] = useState({ firstName: '', lastName: '', username: '', email: '', password: '' });
+
+  // Handle Google/Apple redirect result on mount
+  useEffect(() => {
+    setLoading(true);
+    checkRedirectResult()
+      .then(user => { if (user) navigate('/browse'); })
+      .catch(e => setError(e.message || 'Sign-in failed.'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  // Toast display
   useEffect(() => {
     if (!error) return;
     setToast(error);
     setToastVisible(true);
-    const hide = setTimeout(() => setToastVisible(false), 4000);
+    const hide  = setTimeout(() => setToastVisible(false), 4000);
     const clear = setTimeout(() => { setToast(''); setError(''); }, 4400);
     return () => { clearTimeout(hide); clearTimeout(clear); };
   }, [error]);
-  const [foundUsername, setFoundUsername] = useState('');
-  const [form, setForm] = useState({ firstName: '', lastName: '', username: '', email: '', password: '' });
 
   function change(e) { setForm(f => ({ ...f, [e.target.name]: e.target.value })); }
   function reset() { setError(''); setInfo(''); }
@@ -62,19 +74,11 @@ export default function Login() {
   async function handleOAuth(fn) {
     reset(); setLoading(true);
     try {
-      await fn();
-      navigate('/browse');
+      await fn(); // triggers redirect — page will reload
     } catch (e) {
-      if (e.code === 'auth/popup-blocked') {
-        setError('Popup was blocked. Please allow popups for this site and try again.');
-      } else if (e.code === 'auth/unauthorized-domain') {
-        setError('This domain is not authorised in Firebase. Add it under Authentication → Settings → Authorized domains.');
-      } else if (e.code === 'auth/popup-closed-by-user') {
-        setError('Sign-in window was closed. Please try again.');
-      } else {
-        setError(e.message || 'Sign-in failed. Please try again.');
-      }
-    } finally { setLoading(false); }
+      setError(e.message || 'Sign-in failed. Please try again.');
+      setLoading(false);
+    }
   }
 
   async function handleSignUp(e) {

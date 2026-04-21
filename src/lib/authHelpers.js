@@ -1,22 +1,23 @@
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   sendEmailVerification,
   sendPasswordResetEmail,
-  fetchSignInMethodsForEmail,
   updatePassword,
-  reauthenticateWithCredential,
-  EmailAuthProvider,
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, query, collection, where, getDocs } from 'firebase/firestore';
+import {
+  doc, setDoc, getDoc,
+  query, collection, where, getDocs,
+} from 'firebase/firestore';
 import { auth, db, googleProvider, appleProvider } from './firebase';
 
 const USERS = 'users';
 
 // ── Save profile to Firestore ────────────────────────────────
 async function saveProfile(user, extra = {}) {
-  const ref = doc(db, USERS, user.uid);
+  const ref  = doc(db, USERS, user.uid);
   const snap = await getDoc(ref);
   if (!snap.exists()) {
     await setDoc(ref, {
@@ -24,11 +25,28 @@ async function saveProfile(user, extra = {}) {
       email:     user.email,
       firstName: extra.firstName || user.displayName?.split(' ')[0] || '',
       lastName:  extra.lastName  || user.displayName?.split(' ').slice(1).join(' ') || '',
-      username:  extra.username  || user.email.split('@')[0],
+      username:  extra.username  || user.email?.split('@')[0] || '',
       photoURL:  user.photoURL   || '',
       provider:  extra.provider  || 'email',
       createdAt: new Date().toISOString(),
     });
+  }
+}
+
+// ── Check redirect result on page load ──────────────────────
+export async function checkRedirectResult() {
+  try {
+    const result = await getRedirectResult(auth);
+    if (!result) return null;
+    await saveProfile(result.user, {
+      provider: result.providerId?.includes('apple') ? 'apple' : 'google',
+    });
+    return result.user;
+  } catch (err) {
+    if (err.code === 'auth/unauthorized-domain') {
+      throw new Error('This domain is not authorised in Firebase. Add it under Authentication → Settings → Authorized domains.');
+    }
+    throw err;
   }
 }
 
@@ -41,59 +59,61 @@ export async function signUp({ firstName, lastName, username, email, password })
 
   const cred = await createUserWithEmailAndPassword(auth, email, password);
   await saveProfile(cred.user, { firstName, lastName, username, provider: 'email' });
-  await sendEmailVerification(cred.user, {
-    url: `${window.location.origin}/login`,
-  });
+  await sendEmailVerification(cred.user, { url: `${window.location.origin}/login` });
   await auth.signOut();
-  return cred.user;
 }
 
 // ── Sign In ──────────────────────────────────────────────────
 export async function signIn({ email, password }) {
-  const methods = await fetchSignInMethodsForEmail(auth, email);
-  if (methods.length === 0) throw new Error('NO_ACCOUNT');
-
-  const cred = await signInWithEmailAndPassword(auth, email, password);
-
-  if (!cred.user.emailVerified) {
-    await auth.signOut();
-    throw new Error('NOT_VERIFIED');
+  try {
+    const cred = await signInWithEmailAndPassword(auth, email, password);
+    if (!cred.user.emailVerified) {
+      await auth.signOut();
+      throw new Error('NOT_VERIFIED');
+    }
+    return cred.user;
+  } catch (err) {
+    if (err.message === 'NOT_VERIFIED') throw err;
+    if (
+      err.code === 'auth/user-not-found'   ||
+      err.code === 'auth/invalid-email'    ||
+      err.code === 'auth/invalid-credential'
+    ) throw new Error('NO_ACCOUNT');
+    if (err.code === 'auth/wrong-password') throw new Error('WRONG_PASSWORD');
+    throw err;
   }
-  return cred.user;
 }
 
-// ── Google Sign In ───────────────────────────────────────────
+// ── Google Sign In (redirect) ────────────────────────────────
 export async function signInWithGoogle() {
-  const cred = await signInWithPopup(auth, googleProvider);
-  await saveProfile(cred.user, { provider: 'google' });
-  return cred.user;
+  await signInWithRedirect(auth, googleProvider);
 }
 
-// ── Apple Sign In ────────────────────────────────────────────
+// ── Apple Sign In (redirect) ─────────────────────────────────
 export async function signInWithApple() {
-  const cred = await signInWithPopup(auth, appleProvider);
-  const firstName = cred.user.displayName?.split(' ')[0] || '';
-  const lastName  = cred.user.displayName?.split(' ').slice(1).join(' ') || '';
-  await saveProfile(cred.user, { firstName, lastName, provider: 'apple' });
-  return cred.user;
+  await signInWithRedirect(auth, appleProvider);
 }
 
 // ── Forgot Password ──────────────────────────────────────────
 export async function forgotPassword(email) {
-  const methods = await fetchSignInMethodsForEmail(auth, email);
-  if (methods.length === 0) throw new Error('NO_ACCOUNT');
-  await sendPasswordResetEmail(auth, email, {
-    url: `${window.location.origin}/login`,
-  });
+  try {
+    await sendPasswordResetEmail(auth, email, {
+      url: `${window.location.origin}/login`,
+    });
+  } catch (err) {
+    if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-email') {
+      throw new Error('NO_ACCOUNT');
+    }
+    throw err;
+  }
 }
 
 // ── Forgot Username ──────────────────────────────────────────
 export async function forgotUsername(email) {
-  const q = query(collection(db, USERS), where('email', '==', email));
+  const q    = query(collection(db, USERS), where('email', '==', email));
   const snap = await getDocs(q);
   if (snap.empty) throw new Error('NO_ACCOUNT');
-  const profile = snap.docs[0].data();
-  return profile.username;
+  return snap.docs[0].data().username;
 }
 
 // ── Get Profile ──────────────────────────────────────────────
