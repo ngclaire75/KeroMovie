@@ -214,6 +214,19 @@
   background: rgba(255,255,255,0.14);
 }
 
+.lp-input[type="password"] {
+  padding-right: 14px;
+}
+
+.lp-input[type="password"]::-ms-reveal,
+.lp-input[type="password"]::-ms-clear,
+.lp-input[type="password"]::-webkit-contacts-auto-fill-button,
+.lp-input[type="password"]::-webkit-credentials-auto-fill-button {
+  display: none !important;
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .lp-input-icon {
   position: absolute;
   right: 12px;
