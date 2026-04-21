@@ -472,7 +472,7 @@
 /* ── Mobile ── */
 @media (max-width: 768px) {
   .lp-page {
-    min-height: 100dvh;
+    height: 100dvh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
