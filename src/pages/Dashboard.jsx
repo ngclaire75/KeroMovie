@@ -396,7 +396,7 @@ export default function Dashboard() {
 
       {/* ── Mobile Header ── */}
       <header className="db-mobile-header">
-        <img src={logo} alt="KeroMovie" className="db-mobile-logo" />
+        <Link to="/"><img src={logo} alt="KeroMovie" className="db-mobile-logo" /></Link>
         <span className="db-mobile-greeting">{greeting}, <strong>{displayName}</strong></span>
         <button className="db-hamburger" onClick={() => setMobileNavOpen(o => !o)} aria-label="Menu">
           {mobileNavOpen ? <IcoX /> : <IcoMenu />}
@@ -411,7 +411,7 @@ export default function Dashboard() {
       {/* ── Left Sidebar ── */}
       <aside className={`db-sidebar-left${mobileNavOpen ? ' db-sidebar-left--open' : ''}`}>
         <div className="db-sl-logo-wrap">
-          <img src={logo} alt="KeroMovie" className="db-sl-logo-img" />
+          <Link to="/"><img src={logo} alt="KeroMovie" className="db-sl-logo-img" /></Link>
         </div>
         <nav className="db-sl-nav">
           <Link to="/"          className="db-sl-icon"              title="Home"      onClick={() => setMobileNavOpen(false)}><IcoFilm /></Link>
