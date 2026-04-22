@@ -537,11 +537,6 @@ export default function Dashboard() {
                     <div className="db-scanner-placeholder">
                       <IcoCamera />
                       <p>Enable camera or upload an image to scan actor faces</p>
-                      {!AWS_KEY && (
-                        <p className="db-scanner-hint">
-                          Add VITE_AWS_ACCESS_KEY_ID + VITE_AWS_SECRET_ACCESS_KEY to .env to activate
-                        </p>
-                      )}
                     </div>
                   )}
                   {/* Scanning overlay */}
@@ -580,7 +575,7 @@ export default function Dashboard() {
 
                 {scanError && (
                   <div className="db-scan-error">
-                    <IcoAlert /> {scanError}
+                    {scanError}
                   </div>
                 )}
 
