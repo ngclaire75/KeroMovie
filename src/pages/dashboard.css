@@ -29,6 +29,7 @@
   flex-direction: row;
   height: 100vh;
   width: 100vw;
+  min-width: 860px;
   overflow: hidden;
   background: linear-gradient(160deg, var(--db-bg) 0%, var(--db-bg2) 60%, var(--db-bg3) 100%);
   color: var(--db-text);
@@ -326,12 +327,15 @@
   position: relative;
   z-index: 2;
   padding: 20px 22px;
-  max-width: 56%;
+  width: 54%;
+  min-width: 280px;
+  max-width: 420px;
   height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .db-hero-badges {
@@ -504,7 +508,8 @@
   position: absolute;
   right: 0; top: 0;
   height: 100%;
-  width: 46%;
+  width: 44%;
+  min-width: 180px;
   display: flex;
   align-items: flex-end;
   justify-content: flex-end;
@@ -1246,6 +1251,7 @@
   .db-root {
     flex-direction: column;
     height: 100vh;
+    min-width: 0;
     overflow-y: auto;
     overflow-x: hidden;
     padding-top: 56px;

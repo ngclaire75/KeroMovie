@@ -4,6 +4,7 @@
 
 .mg-section {
   padding: 18px 30px 28px 52px;
+  min-width: 600px;
 }
 
 .mg-heading {
@@ -247,6 +248,7 @@
 @media (max-width: 768px) {
   .mg-section {
     padding: 14px 16px 24px 16px;
+    min-width: 0;
   }
 
   .mg-heading {
