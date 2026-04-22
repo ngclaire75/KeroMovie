@@ -48,6 +48,15 @@ export default function Forums() {
   const [profile,   setProfile]   = useState(null);
   const [authReady, setAuthReady] = useState(false);
 
+  useEffect(() => {
+    document.documentElement.classList.add('lp-scroll-unlock');
+    document.body.classList.add('lp-scroll-unlock');
+    return () => {
+      document.documentElement.classList.remove('lp-scroll-unlock');
+      document.body.classList.remove('lp-scroll-unlock');
+    };
+  }, []);
+
   // Post form
   const [movieSearch,    setMovieSearch]    = useState('');
   const [searchResults,  setSearchResults]  = useState([]);
