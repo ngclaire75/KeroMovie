@@ -67,6 +67,36 @@
   text-transform: uppercase;
 }
 
+.mg-bm-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: rgba(0,0,0,0.65);
+  border: 1px solid rgba(255,255,255,0.15);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.6);
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s, color 0.2s;
+  backdrop-filter: blur(4px);
+}
+
+.mg-card:hover .mg-bm-btn { opacity: 1; }
+
+.mg-bm-btn--active {
+  opacity: 1;
+  background: rgba(231,76,60,0.85);
+  border-color: #e74c3c;
+  color: #fff;
+}
+
+.mg-bm-btn:hover { background: rgba(231,76,60,0.9); color: #fff; }
+
 .mg-type-badge {
   position: absolute;
   top: 6px;

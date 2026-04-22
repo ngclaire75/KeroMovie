@@ -1,5 +1,17 @@
 import { useEffect, useState, useRef } from 'react';
+import { useApp } from '../../context/AppContext';
 import './MovieGrid.css';
+
+const IcoBookmarkFill = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+  </svg>
+);
+const IcoBookmarkOut = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="14" height="14">
+    <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+  </svg>
+);
 
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w300';
 
@@ -75,6 +87,7 @@ export default function MovieGrid({ genre = 'Trending Now', searchQuery = '' }) 
   const [error, setError]     = useState(null);
   const [visible, setVisible] = useState(false);
   const cache = useRef({});
+  const { addBookmark, removeBookmark, isBookmarked } = useApp();
 
   useEffect(() => {
     const key = import.meta.env.VITE_TMDB_KEY;
@@ -205,6 +218,16 @@ export default function MovieGrid({ genre = 'Trending Now', searchQuery = '' }) 
               >
                 <span className="mg-no-image">No Image</span>
               </div>
+              <button
+                className={`mg-bm-btn${isBookmarked(movie.id) ? ' mg-bm-btn--active' : ''}`}
+                onClick={e => {
+                  e.stopPropagation();
+                  isBookmarked(movie.id) ? removeBookmark(movie.id) : addBookmark(movie.id);
+                }}
+                title={isBookmarked(movie.id) ? 'Remove bookmark' : 'Bookmark'}
+              >
+                {isBookmarked(movie.id) ? <IcoBookmarkFill /> : <IcoBookmarkOut />}
+              </button>
             </div>
             <div className="mg-info">
               <p className="mg-meta">
