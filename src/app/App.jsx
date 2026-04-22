@@ -7,6 +7,7 @@ import Streaming from '../pages/Streaming';
 import Login from '../pages/Login';
 import ResetPassword from '../pages/ResetPassword';
 import Dashboard from '../pages/Dashboard';
+import PrivacyNotice from '../pages/PrivacyNotice';
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
           <Route path="/login"          element={<Login />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/browse"         element={<Dashboard />} />
+          <Route path="/privacy"        element={<PrivacyNotice />} />
         </Routes>
       </BrowserRouter>
     </AppProvider>

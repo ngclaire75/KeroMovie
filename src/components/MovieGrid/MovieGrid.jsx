@@ -87,7 +87,7 @@ export default function MovieGrid({ genre = 'Trending Now', searchQuery = '' }) 
   const [error, setError]     = useState(null);
   const [visible, setVisible] = useState(false);
   const cache = useRef({});
-  const { addBookmark, removeBookmark, isBookmarked } = useApp();
+  const { addBookmark, removeBookmark, isBookmarked, preferredCountry } = useApp();
 
   useEffect(() => {
     const key = import.meta.env.VITE_TMDB_KEY;
@@ -97,7 +97,10 @@ export default function MovieGrid({ genre = 'Trending Now', searchQuery = '' }) 
       return;
     }
 
-    const cacheKey = searchQuery ? `search:${searchQuery.toLowerCase()}` : genre;
+    const countryParam = preferredCountry ? `&with_origin_country=${preferredCountry}` : '';
+    const cacheKey = searchQuery
+      ? `search:${searchQuery.toLowerCase()}`
+      : `${genre}:${preferredCountry}`;
 
     if (cache.current[cacheKey]) {
       setMovies(cache.current[cacheKey]);
@@ -128,10 +131,14 @@ export default function MovieGrid({ genre = 'Trending Now', searchQuery = '' }) 
     if (searchQuery) {
       baseUrl = `${base}/search/movie?api_key=${key}&${safe}&query=${encodeURIComponent(searchQuery)}`;
     } else if (genre === 'Trending Now') {
-      baseUrl = `${base}/trending/movie/week?api_key=${key}&${safe}`;
+      if (preferredCountry) {
+        baseUrl = `${base}/discover/movie?api_key=${key}&${safe}&sort_by=popularity.desc${countryParam}`;
+      } else {
+        baseUrl = `${base}/trending/movie/week?api_key=${key}&${safe}`;
+      }
     } else {
       const genreId = GENRE_IDS[genre];
-      baseUrl = `${base}/discover/movie?api_key=${key}&${safe}&with_genres=${genreId}&sort_by=popularity.desc&vote_count.gte=50`;
+      baseUrl = `${base}/discover/movie?api_key=${key}&${safe}&with_genres=${genreId}&sort_by=popularity.desc&vote_count.gte=50${countryParam}`;
     }
 
     fetchPages(baseUrl, searchQuery ? 2 : PAGES)
@@ -152,7 +159,7 @@ export default function MovieGrid({ genre = 'Trending Now', searchQuery = '' }) 
         setError('Network error — check your connection.');
         setLoading(false);
       });
-  }, [genre, searchQuery]);
+  }, [genre, searchQuery, preferredCountry]);
 
   if (loading) {
     return (

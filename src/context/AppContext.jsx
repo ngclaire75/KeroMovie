@@ -21,6 +21,18 @@ export function AppProvider({ children }) {
     try { return JSON.parse(localStorage.getItem('km_recent')) || []; } catch { return []; }
   });
 
+  const [preferredCountry, setPreferredCountry] = useState(() => {
+    try { return localStorage.getItem('km_country') || ''; } catch { return ''; }
+  });
+
+  const [preferredGenres, setPreferredGenres] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('km_genres')) || []; } catch { return []; }
+  });
+
+  const [profilePhoto, setProfilePhoto] = useState(() => {
+    try { return localStorage.getItem('km_photo') || ''; } catch { return ''; }
+  });
+
   const [currentUser, setCurrentUser] = useState('Guest');
 
   useEffect(() => {
@@ -42,6 +54,14 @@ export function AppProvider({ children }) {
   useEffect(() => { localStorage.setItem('km_comments', JSON.stringify(comments)); }, [comments]);
   useEffect(() => { localStorage.setItem('km_ratings', JSON.stringify(ratings)); }, [ratings]);
   useEffect(() => { localStorage.setItem('km_recent', JSON.stringify(recentlyViewed)); }, [recentlyViewed]);
+  useEffect(() => { localStorage.setItem('km_country', preferredCountry); }, [preferredCountry]);
+  useEffect(() => { localStorage.setItem('km_genres', JSON.stringify(preferredGenres)); }, [preferredGenres]);
+  useEffect(() => {
+    try {
+      if (profilePhoto) localStorage.setItem('km_photo', profilePhoto);
+      else localStorage.removeItem('km_photo');
+    } catch {}
+  }, [profilePhoto]);
 
   const addBookmark    = (id) => { if (!bookmarks.includes(id)) setBookmarks(p => [...p, id]); };
   const removeBookmark = (id) => setBookmarks(p => p.filter(b => b !== id));
@@ -79,6 +99,9 @@ export function AppProvider({ children }) {
       ratings, addRating,
       recentlyViewed, addToRecent,
       currentUser,
+      preferredCountry, setPreferredCountry,
+      preferredGenres,  setPreferredGenres,
+      profilePhoto,     setProfilePhoto,
     }}>
       {children}
     </AppContext.Provider>

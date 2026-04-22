@@ -1,0 +1,189 @@
+/* ═══════════════════════════════════════════════
+   PRIVACY NOTICE PAGE
+   ═══════════════════════════════════════════════ */
+
+.pn-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: #fff;
+  background: linear-gradient(160deg, #000000 0%, #1a0000 45%, #3d0000 100%);
+}
+
+.pn-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 40px 5% 64px;
+  scrollbar-width: none;
+}
+
+.pn-body::-webkit-scrollbar { display: none; }
+
+.pn-container {
+  max-width: 760px;
+}
+
+.pn-effective {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.4);
+  margin-bottom: 20px;
+  letter-spacing: 0.04em;
+}
+
+.pn-intro {
+  font-size: 0.92rem;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.7;
+  margin-bottom: 36px;
+  max-width: 640px;
+}
+
+/* ── Sections ── */
+.pn-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.pn-section {
+  padding: 28px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+.pn-section:last-child {
+  border-bottom: none;
+}
+
+.pn-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 16px;
+  letter-spacing: -0.01em;
+}
+
+.pn-section-title svg {
+  width: 18px;
+  height: 18px;
+  color: #e74c3c;
+  flex-shrink: 0;
+}
+
+/* ── Item rows (label + description) ── */
+.pn-items {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pn-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 10px;
+}
+
+.pn-item-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.pn-item-desc {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.58);
+  line-height: 1.65;
+}
+
+/* ── List ── */
+.pn-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pn-list li {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.65);
+  line-height: 1.6;
+  padding-left: 20px;
+  position: relative;
+}
+
+.pn-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 9px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #e74c3c;
+}
+
+.pn-list li strong {
+  color: #fff;
+  font-weight: 700;
+}
+
+/* ── Plain text paragraphs ── */
+.pn-text {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.6);
+  line-height: 1.7;
+  margin-bottom: 10px;
+}
+
+.pn-text:last-child { margin-bottom: 0; }
+
+/* ── Note callout ── */
+.pn-note {
+  margin-top: 14px;
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.45);
+  font-style: italic;
+  line-height: 1.6;
+}
+
+/* ── External links ── */
+.pn-link {
+  color: #e74c3c;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.2s;
+}
+
+.pn-link:hover { color: #ff6b5b; }
+
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .pn-page {
+    min-height: 100vh;
+    height: auto;
+    overflow-y: auto;
+  }
+
+  .pn-body {
+    padding: 28px 5% 48px;
+    overflow: visible;
+  }
+
+  .pn-section-title {
+    font-size: 0.92rem;
+  }
+
+  .pn-item {
+    padding: 12px 14px;
+  }
+}

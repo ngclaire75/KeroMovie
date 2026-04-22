@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { auth } from '../lib/firebase';
 import { getProfile } from '../lib/authHelpers';
 import { useApp } from '../context/AppContext';
+import ProfileModal from '../components/ProfileModal/ProfileModal';
 import logo from '../../images/keromovielogo.png';
 import './dashboard.css';
 
@@ -21,6 +22,42 @@ const GENRE_MAP = {
   18:'Drama', 14:'Fantasy', 27:'Horror', 10749:'Romance', 878:'Sci-Fi',
   53:'Thriller', 10402:'Music', 99:'Documentary',
 };
+
+const GENRE_GROUP_MAP = {
+  28:'action', 12:'action', 37:'action', 10752:'war',
+  35:'comedy', 16:'animation',
+  27:'horror', 53:'thriller', 9648:'crime', 80:'crime',
+  10749:'romance', 18:'drama', 10402:'music',
+  878:'scifi', 14:'fantasy',
+  99:'documentary', 36:'documentary',
+};
+
+const PERSONALITY_MAP = {
+  action:      { title:'The Adrenaline Seeker',  desc:'High stakes and relentless pace are your fuel. You thrive on cinematic intensity and never back down from a challenge — on screen or off.',                        traits:['Bold','Energetic','Decisive'] },
+  comedy:      { title:'The Joy Bringer',         desc:'Life is better with laughter. You appreciate wit, timing, and the rare gift of a story that makes a whole room light up.',                                        traits:['Optimistic','Witty','Social'] },
+  drama:       { title:'The Deep Empath',         desc:'You connect with raw human emotion above all else. Complex characters and honest storytelling speak to you on a level most people never reach.',                 traits:['Empathetic','Thoughtful','Introspective'] },
+  horror:      { title:'The Shadow Explorer',     desc:"Fear doesn't repel you — it intrigues you. You seek the thrill of the unknown and appreciate stories that dare to go where others won't.",                      traits:['Fearless','Curious','Edgy'] },
+  romance:     { title:'The Hopeless Romantic',   desc:'You believe deeply in connection, vulnerability, and the power of love stories. Emotional depth and heartfelt moments are your cinematic language.',            traits:['Passionate','Warm','Idealistic'] },
+  scifi:       { title:'The Visionary',           desc:'You think beyond the present. Big ideas, speculative worlds, and the limitless possibilities of what could exist fascinate your ever-curious mind.',            traits:['Imaginative','Analytical','Forward-thinking'] },
+  thriller:    { title:'The Edge Walker',         desc:'Suspense and psychological tension are your comfort zone. You love the mental chess game of unravelling a perfectly constructed mystery.',                       traits:['Sharp','Perceptive','Intense'] },
+  fantasy:     { title:'The Dreamer',             desc:'You live in worlds built from pure imagination. Myth, magic, and the extraordinary call to you — reality is just a starting point.',                            traits:['Creative','Open-minded','Adventurous'] },
+  crime:       { title:'The Detective',           desc:"A sharp analytical mind drives your viewing. You're drawn to moral complexity, power dynamics, and the satisfaction of watching it all unravel.",               traits:['Analytical','Strategic','Discerning'] },
+  documentary: { title:'The Truth Seeker',        desc:'You value knowledge, perspective, and the unfiltered truth. Real stories and real people fascinate you more than any fictional narrative ever could.',          traits:['Curious','Grounded','Informed'] },
+  animation:   { title:'The Free Spirit',         desc:"You're young at heart and refuse to let imagination be limited by age or logic. Animation speaks a visual language that transcends every boundary.",            traits:['Playful','Creative','Open'] },
+  music:       { title:'The Soul',                desc:'Emotion, rhythm, and artistic expression are your compass. You feel stories as much as you watch them, and music gives them their heartbeat.',                  traits:['Expressive','Sensitive','Artistic'] },
+  war:         { title:'The Historian',           desc:'You study the weight of human history and the sacrifices that shaped the world. Depth, consequence, and courage in the face of impossibility speak to you.',    traits:['Resilient','Principled','Reflective'] },
+};
+
+function derivePersonality(genreIds) {
+  if (!genreIds?.length) return null;
+  const counts = {};
+  for (const id of genreIds) {
+    const g = GENRE_GROUP_MAP[id];
+    if (g) counts[g] = (counts[g] || 0) + 1;
+  }
+  const dominant = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
+  return dominant ? PERSONALITY_MAP[dominant] : null;
+}
 
 function getGreeting() {
   const h = new Date().getHours();
@@ -50,7 +87,7 @@ async function hmacBytes(keyBytes, msg) {
 }
 
 async function rekognizeCelebrities(jpegBytes) {
-  if (!AWS_KEY || !AWS_SECRET) throw new Error('AWS credentials not set in .env (VITE_AWS_ACCESS_KEY_ID / VITE_AWS_SECRET_ACCESS_KEY)');
+  if (!AWS_KEY || !AWS_SECRET) throw new Error('AWS Rekognition is not able to detect yet.');
 
   const service  = 'rekognition';
   const target   = 'RekognitionService.RecognizeCelebrities';
@@ -122,7 +159,9 @@ const IcoImdb    = () => <svg viewBox="0 0 24 24" fill="currentColor" style={{co
 // ── Main Dashboard ─────────────────────────────────────────────────────
 export default function Dashboard() {
   const navigate  = useNavigate();
-  const { bookmarks, removeBookmark, isBookmarked, addBookmark, comments, ratings, currentUser } = useApp();
+  const { bookmarks, removeBookmark, isBookmarked, addBookmark, comments, ratings, currentUser,
+          preferredCountry, preferredGenres, profilePhoto } = useApp();
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const [profile, setProfile]               = useState(null);
   const [allTrending, setAllTrending]       = useState([]);
@@ -170,22 +209,30 @@ export default function Dashboard() {
     return unsub;
   }, []);
 
-  // Fetch diverse movies from multiple endpoints, shuffle for variety
+  // Fetch movies — when a preferred country is set, filter by origin country
   useEffect(() => {
-    const endpoints = [
-      `/trending/movie/day`,
-      `/movie/now_playing`,
-      `/movie/top_rated`,
-      `/movie/popular`,
-    ];
-    Promise.all(
-      endpoints.map(ep =>
-        fetch(`${TMDB_BASE}${ep}?api_key=${TMDB_KEY}&language=en-US`)
-          .then(r => r.json())
-          .then(d => d.results || [])
-          .catch(() => [])
-      )
-    ).then(pages => {
+    if (!TMDB_KEY) return;
+    const base    = `${TMDB_BASE}`;
+    const safe    = `api_key=${TMDB_KEY}&language=en-US&include_adult=false`;
+    const country = preferredCountry;
+
+    let fetches;
+    if (country) {
+      fetches = [
+        fetch(`${base}/discover/movie?${safe}&sort_by=popularity.desc&with_origin_country=${country}`).then(r => r.json()).then(d => d.results || []).catch(() => []),
+        fetch(`${base}/discover/movie?${safe}&sort_by=vote_average.desc&vote_count.gte=100&with_origin_country=${country}`).then(r => r.json()).then(d => d.results || []).catch(() => []),
+        fetch(`${base}/discover/movie?${safe}&sort_by=revenue.desc&with_origin_country=${country}`).then(r => r.json()).then(d => d.results || []).catch(() => []),
+      ];
+    } else {
+      fetches = [
+        fetch(`${base}/trending/movie/day?${safe}`).then(r => r.json()).then(d => d.results || []).catch(() => []),
+        fetch(`${base}/movie/now_playing?${safe}`).then(r => r.json()).then(d => d.results || []).catch(() => []),
+        fetch(`${base}/movie/top_rated?${safe}`).then(r => r.json()).then(d => d.results || []).catch(() => []),
+        fetch(`${base}/movie/popular?${safe}`).then(r => r.json()).then(d => d.results || []).catch(() => []),
+      ];
+    }
+
+    Promise.all(fetches).then(pages => {
       const seen = new Set();
       const pool = pages
         .flat()
@@ -195,14 +242,13 @@ export default function Dashboard() {
           seen.add(m.id);
           return true;
         });
-      // Fisher-Yates shuffle
       for (let i = pool.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [pool[i], pool[j]] = [pool[j], pool[i]];
       }
       setAllTrending(pool);
     });
-  }, []);
+  }, [preferredCountry]);
 
   // Derive featured and releases from indices
   // Featured cycles through the first 8; releases use the remaining pool
@@ -398,6 +444,17 @@ export default function Dashboard() {
       <header className="db-mobile-header">
         <Link to="/"><img src={logo} alt="KeroMovie" className="db-mobile-logo" /></Link>
         <span className="db-mobile-greeting">{greeting}, <strong>{displayName}</strong></span>
+        <button
+          className="db-avatar db-mobile-avatar"
+          style={profilePhoto ? {} : { background: 'linear-gradient(135deg,#e74c3c,#8b0000)' }}
+          onClick={() => setProfileOpen(true)}
+          title="Profile"
+        >
+          {profilePhoto
+            ? <img src={profilePhoto} alt="Profile" className="db-avatar-img" />
+            : displayName.charAt(0).toUpperCase()
+          }
+        </button>
         <button className="db-hamburger" onClick={() => setMobileNavOpen(o => !o)} aria-label="Menu">
           {mobileNavOpen ? <IcoX /> : <IcoMenu />}
         </button>
@@ -437,9 +494,17 @@ export default function Dashboard() {
             </p>
           </div>
           <div className="db-topbar-right">
-            <div className="db-avatar" style={{ background: 'linear-gradient(135deg,#e74c3c,#8b0000)' }}>
-              {displayName.charAt(0).toUpperCase()}
-            </div>
+            <button
+              className="db-avatar"
+              style={profilePhoto ? {} : { background: 'linear-gradient(135deg,#e74c3c,#8b0000)' }}
+              onClick={() => setProfileOpen(true)}
+              title="Profile & Preferences"
+            >
+              {profilePhoto
+                ? <img src={profilePhoto} alt="Profile" className="db-avatar-img" />
+                : displayName.charAt(0).toUpperCase()
+              }
+            </button>
           </div>
         </header>
 
@@ -727,6 +792,39 @@ export default function Dashboard() {
               </div>
             )}
 
+            {/* Taste Profile */}
+            {(() => {
+              const p = derivePersonality(preferredGenres);
+              return p ? (
+                <div className="db-panel-block">
+                  <div className="db-section-row">
+                    <span className="db-section-title">Your Taste Profile</span>
+                  </div>
+                  <div className="db-taste-card">
+                    <p className="db-taste-title">{p.title}</p>
+                    <p className="db-taste-desc">{p.desc}</p>
+                    <div className="db-taste-traits">
+                      {p.traits.map(t => <span key={t} className="db-taste-trait">{t}</span>)}
+                    </div>
+                    <button className="db-taste-edit" onClick={() => setProfileOpen(true)}>
+                      Edit genres
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="db-panel-block">
+                  <div className="db-section-row">
+                    <span className="db-section-title">Your Taste Profile</span>
+                  </div>
+                  <div className="db-empty">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <p>Select your preferred genres in Profile &gt; Preferences to unlock your taste profile.</p>
+                    <button className="db-taste-edit" onClick={() => setProfileOpen(true)}>Set preferences</button>
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Recent Activity (Comments + Ratings) */}
             <div className="db-panel-block">
               <div className="db-section-row">
@@ -735,7 +833,7 @@ export default function Dashboard() {
               {myComments.length === 0 && myRatings.length === 0 ? (
                 <div className="db-empty">
                   <IcoForum />
-                  <p>No activity yet. Comment or rate movies from the Explore page.</p>
+                  <p>No activity yet. Comment or rate movies from the Forums page.</p>
                 </div>
               ) : (
                 <div className="db-activity-list">
@@ -766,6 +864,15 @@ export default function Dashboard() {
           </aside>
         </div>
       </div>
+
+      {/* ── Profile Modal ── */}
+      {profileOpen && (
+        <ProfileModal
+          profile={profile}
+          onClose={() => setProfileOpen(false)}
+          onProfileUpdate={p => setProfile(p)}
+        />
+      )}
 
       {/* ── Mobile Bottom Nav ── */}
       <nav className="db-bottom-nav">

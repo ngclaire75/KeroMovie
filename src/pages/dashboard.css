@@ -233,6 +233,16 @@
   cursor: pointer;
   box-shadow: 0 0 14px rgba(231,76,60,0.35);
   flex-shrink: 0;
+  overflow: hidden;
+  padding: 0;
+}
+
+.db-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
 }
 
 /* ── Body ── */
@@ -1076,6 +1086,78 @@
 
 .db-cast-toggle svg { width: 13px; height: 13px; }
 .db-cast-toggle:hover { color: var(--db-red); border-color: rgba(231,76,60,0.3); }
+
+/* ── Taste Profile ── */
+.db-taste-card {
+  background: linear-gradient(135deg, rgba(231,76,60,0.1) 0%, rgba(139,0,0,0.08) 100%);
+  border: 1px solid rgba(231,76,60,0.2);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.db-taste-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--db-text);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.db-taste-desc {
+  font-size: 0.74rem;
+  color: var(--db-text2);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.db-taste-traits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.db-taste-trait {
+  font-size: 0.66rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(231,76,60,0.18);
+  border: 1px solid rgba(231,76,60,0.3);
+  color: #ff9d93;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.db-taste-edit {
+  align-self: flex-start;
+  background: none;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 999px;
+  color: var(--db-text3);
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+  margin-top: 4px;
+}
+
+.db-taste-edit:hover { color: var(--db-red); border-color: rgba(231,76,60,0.3); }
+
+/* ── Mobile avatar in header ── */
+.db-mobile-avatar {
+  width: 32px;
+  height: 32px;
+  font-size: 0.78rem;
+  cursor: pointer;
+  border: none;
+  flex-shrink: 0;
+}
 
 /* ── Activity List ── */
 .db-activity-list {

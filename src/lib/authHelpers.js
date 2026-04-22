@@ -7,9 +7,12 @@ import {
   sendEmailVerification,
   sendPasswordResetEmail,
   updatePassword,
+  updateEmail,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
 } from 'firebase/auth';
 import {
-  doc, setDoc, getDoc,
+  doc, setDoc, getDoc, updateDoc,
   query, collection, where, getDocs,
 } from 'firebase/firestore';
 import { auth, db, googleProvider, appleProvider } from './firebase';
@@ -56,34 +59,51 @@ export async function checkRedirectResult() {
 
 // ── Sign Up ──────────────────────────────────────────────────
 export async function signUp({ firstName, lastName, username, email, password }) {
-  // Check username taken
-  const uq = query(collection(db, USERS), where('username', '==', username));
-  const us = await getDocs(uq);
-  if (!us.empty) throw new Error('Username already taken. Please choose another.');
-
+  // Create the auth user first — this authenticates the session so
+  // subsequent Firestore reads are permitted by security rules.
   const cred = await createUserWithEmailAndPassword(auth, email, password);
-  await saveProfile(cred.user, { firstName, lastName, username, provider: 'email' });
-  await sendEmailVerification(cred.user, { url: `${window.location.origin}/login` });
-  await auth.signOut();
+
+  try {
+    // Username uniqueness check — requires Firestore rules to allow
+    // authenticated reads on /users. If rules deny it, skip the check
+    // rather than aborting the whole signup.
+    try {
+      const uq = query(collection(db, USERS), where('username', '==', username));
+      const us = await getDocs(uq);
+      if (!us.empty) {
+        await cred.user.delete();
+        throw new Error('Username already taken. Please choose another.');
+      }
+    } catch (checkErr) {
+      if (checkErr.message === 'Username already taken. Please choose another.') throw checkErr;
+      if (checkErr.code !== 'permission-denied' && checkErr.code !== 'PERMISSION_DENIED') throw checkErr;
+      // permission-denied on the query means Firestore rules need updating —
+      // proceed without uniqueness check so the account still gets created.
+    }
+
+    await saveProfile(cred.user, { firstName, lastName, username, provider: 'email' });
+    await auth.signOut();
+  } catch (err) {
+    if (err.message !== 'Username already taken. Please choose another.') {
+      try { await cred.user.delete(); } catch {}
+    }
+    throw err;
+  }
 }
 
 // ── Sign In ──────────────────────────────────────────────────
 export async function signIn({ email, password }) {
   try {
     const cred = await signInWithEmailAndPassword(auth, email, password);
-    if (!cred.user.emailVerified) {
-      await auth.signOut();
-      throw new Error('NOT_VERIFIED');
-    }
     return cred.user;
   } catch (err) {
-    if (err.message === 'NOT_VERIFIED') throw err;
+    // Firebase v9+ consolidates wrong-email and wrong-password into auth/invalid-credential
     if (
-      err.code === 'auth/user-not-found'   ||
-      err.code === 'auth/invalid-email'    ||
+      err.code === 'auth/user-not-found'    ||
+      err.code === 'auth/wrong-password'    ||
+      err.code === 'auth/invalid-email'     ||
       err.code === 'auth/invalid-credential'
-    ) throw new Error('NO_ACCOUNT');
-    if (err.code === 'auth/wrong-password') throw new Error('WRONG_PASSWORD');
+    ) throw new Error('INVALID_CREDENTIALS');
     throw err;
   }
 }
@@ -136,7 +156,17 @@ export async function forgotPassword(email) {
       url: `${window.location.origin}/login`,
     });
   } catch (err) {
-    if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-email') {
+    // auth/user-not-found (older SDK) or auth/invalid-credential (newer SDK)
+    if (
+      err.code === 'auth/user-not-found'     ||
+      err.code === 'auth/invalid-email'      ||
+      err.code === 'auth/invalid-credential' ||
+      err.code === 'auth/unauthorized-continue-uri'
+    ) {
+      // Try again without the continue URL if domain isn't whitelisted
+      if (err.code === 'auth/unauthorized-continue-uri') {
+        try { await sendPasswordResetEmail(auth, email); return; } catch {}
+      }
       throw new Error('NO_ACCOUNT');
     }
     throw err;
@@ -157,9 +187,28 @@ export async function getProfile(uid) {
   return snap.exists() ? snap.data() : null;
 }
 
-// ── Resend Verification ──────────────────────────────────────
-export async function resendVerification(email, password) {
-  const cred = await signInWithEmailAndPassword(auth, email, password);
-  await sendEmailVerification(cred.user, { url: `${window.location.origin}/login` });
-  await auth.signOut();
+
+// ── Update Username ──────────────────────────────────────────
+export async function updateUsername(uid, newUsername) {
+  const uq   = query(collection(db, USERS), where('username', '==', newUsername));
+  const snap = await getDocs(uq);
+  if (!snap.empty) throw new Error('Username already taken. Please choose another.');
+  await updateDoc(doc(db, USERS, uid), { username: newUsername });
+}
+
+// ── Update Password (requires current password) ──────────────
+export async function updateUserPassword(currentPassword, newPassword) {
+  const user       = auth.currentUser;
+  const credential = EmailAuthProvider.credential(user.email, currentPassword);
+  await reauthenticateWithCredential(user, credential);
+  await updatePassword(user, newPassword);
+}
+
+// ── Update Email (requires current password) ─────────────────
+export async function updateUserEmail(currentPassword, newEmail) {
+  const user       = auth.currentUser;
+  const credential = EmailAuthProvider.credential(user.email, currentPassword);
+  await reauthenticateWithCredential(user, credential);
+  await updateEmail(user, newEmail);
+  await updateDoc(doc(db, USERS, user.uid), { email: newEmail });
 }

@@ -4,7 +4,7 @@ import logo from '../../images/keromovielogo.png';
 import bgGif from '../../images/loginbackground.gif';
 import {
   signUp, signIn, signInWithGoogle, signInWithApple,
-  forgotPassword, forgotUsername, resendVerification,
+  forgotPassword, forgotUsername,
   checkRedirectResult,
 } from '../lib/authHelpers';
 import './login.css';
@@ -102,7 +102,8 @@ export default function Login() {
     setLoading(true);
     try {
       await signUp(form);
-      go('verify-email');
+      go('login');
+      setInfo('Account created! You can now log in.');
     } catch (err) {
       setError(err.message || 'Sign up failed. Please try again.');
     } finally { setLoading(false); }
@@ -117,9 +118,7 @@ export default function Login() {
       await signIn({ email: form.email, password: form.password });
       navigate('/browse');
     } catch (err) {
-      if (err.message === 'NO_ACCOUNT') setError('No account found with this email. Please create an account.');
-      else if (err.message === 'NOT_VERIFIED') setError('Please verify your email before logging in. Check your inbox.');
-      else if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') setError('Incorrect password.');
+      if (err.message === 'INVALID_CREDENTIALS') setError('Incorrect email or password.');
       else setError(err.message || 'Login failed. Please try again.');
     } finally { setLoading(false); }
   }
@@ -152,15 +151,6 @@ export default function Login() {
     } finally { setLoading(false); }
   }
 
-  async function handleResend(e) {
-    e.preventDefault(); reset(); setLoading(true);
-    try {
-      await resendVerification(form.email, form.password);
-      setInfo('Verification email resent! Check your inbox.');
-    } catch { setError('Could not resend. Please try logging in again.'); }
-    finally { setLoading(false); }
-  }
-
   return (
     <>
       <div className="lp-bg">
@@ -178,7 +168,7 @@ export default function Login() {
           </Link>
           <div className="lp-nav-tabs">
             <Link to="/" className="lp-tab">Home</Link>
-            <button className="lp-tab lp-tab-active" onClick={() => go('signup')}>Join</button>
+            <Link to="/privacy" className="lp-tab">Privacy Notice</Link>
           </div>
         </nav>
 
@@ -246,6 +236,7 @@ export default function Login() {
                   Not a member?{' '}
                   <button className="lp-switch-btn" onClick={() => go('signup')}>Sign Up</button>
                 </p>
+                {info && <p className="lp-info">{info}</p>}
                 <form className="lp-form" onSubmit={handleSignIn} noValidate>
                   <div className="lp-field">
                     <label className="lp-label">Email</label>
@@ -312,23 +303,6 @@ export default function Login() {
                   {error && <p className="lp-error">{error}</p>}
                   <button type="submit" className="lp-btn" disabled={loading}>{loading ? 'Looking up…' : 'Find My Username'}</button>
                 </form>
-              </>
-            )}
-
-            {/* ── Verify Email ── */}
-            {view === 'verify-email' && (
-              <>
-                <p className="lp-start">Almost there</p>
-                <h1 className="lp-heading">Check Your Email</h1>
-                <p className="lp-body-msg">
-                  We've sent a verification link to <strong>{form.email}</strong>.<br />
-                  Click the link to activate your account before logging in.
-                </p>
-                {info && <p className="lp-info">{info}</p>}
-                <div className="lp-form" style={{ marginTop: '20px' }}>
-                  <button type="button" className="lp-btn" onClick={handleResend} disabled={loading}>{loading ? 'Sending…' : 'Resend Verification Email'}</button>
-                  <button type="button" className="lp-link-btn" style={{ marginTop: 12 }} onClick={() => go('login')}>Back to Log In</button>
-                </div>
               </>
             )}
 
