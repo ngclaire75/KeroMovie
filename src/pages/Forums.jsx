@@ -70,6 +70,7 @@ export default function Forums() {
 
   // Feed
   const [posts,       setPosts]       = useState([]);
+  const [feedError,   setFeedError]   = useState('');
   const [filterMovie, setFilterMovie] = useState(null);
   const [mobileNav,   setMobileNav]   = useState(false);
 
@@ -80,7 +81,7 @@ export default function Forums() {
   useEffect(() => {
     const unsub = auth.onAuthStateChanged(async user => {
       setAuthReady(true);
-      if (!user) { navigate('/login'); return; }
+      if (!user) { setAuthUser(null); setProfile(null); return; }
       setAuthUser(user);
       const p = await getProfile(user.uid);
       setProfile(p);
@@ -88,14 +89,26 @@ export default function Forums() {
     return unsub;
   }, []);
 
-  // Firestore real-time listener
+  // Firestore real-time listener — waits for auth to be confirmed first
   useEffect(() => {
+    if (!authReady) return;
     const q = query(collection(db, FORUMS_COL), orderBy('createdAt', 'desc'));
-    const unsub = onSnapshot(q, snap => {
-      setPosts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    }, () => {});
+    const unsub = onSnapshot(
+      q,
+      snap => {
+        setPosts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        setFeedError('');
+      },
+      err => {
+        if (err.code === 'permission-denied') {
+          setFeedError('Permission denied — update your Firestore rules to allow authenticated reads on forums_posts.');
+        } else {
+          setFeedError('Could not load reviews. Please refresh.');
+        }
+      }
+    );
     return unsub;
-  }, []);
+  }, [authReady]);
 
   // TMDB debounced search
   useEffect(() => {
@@ -143,9 +156,9 @@ export default function Forums() {
   async function handleSubmit(e) {
     e.preventDefault();
     setFormError('');
+    if (!authUser) { navigate('/login'); return; }
     if (!selectedMovie) { setFormError('Please select a movie first.'); return; }
     if (!comment.trim()) { setFormError('Please write a comment.'); return; }
-    if (!authUser) { navigate('/login'); return; }
 
     setSubmitting(true);
     try {
@@ -179,7 +192,7 @@ export default function Forums() {
     ? posts.filter(p => p.movieId === filterMovie.id)
     : posts;
 
-  const displayName = profile?.firstName || profile?.username || authUser?.email?.split('@')[0] || 'User';
+  const displayName = profile?.firstName || profile?.username || authUser?.email?.split('@')[0] || 'Guest';
   const initial     = displayName.charAt(0).toUpperCase();
 
   if (!authReady) return null;
@@ -201,17 +214,21 @@ export default function Forums() {
 
         <div className="fr-topbar-right">
           <span className="fr-topbar-name">{displayName}</span>
-          <button
-            className="fr-avatar"
-            style={profilePhoto ? {} : { background: 'linear-gradient(135deg,#e74c3c,#8b0000)' }}
-            onClick={() => navigate('/browse')}
-            title="Dashboard"
-          >
-            {profilePhoto
-              ? <img src={profilePhoto} alt="Profile" className="fr-avatar-img" />
-              : initial
-            }
-          </button>
+          {authUser ? (
+            <button
+              className="fr-avatar"
+              style={profilePhoto ? {} : { background: 'linear-gradient(135deg,#e74c3c,#8b0000)' }}
+              onClick={() => navigate('/browse')}
+              title="Dashboard"
+            >
+              {profilePhoto
+                ? <img src={profilePhoto} alt="Profile" className="fr-avatar-img" />
+                : initial
+              }
+            </button>
+          ) : (
+            <button className="fr-login-btn" onClick={() => navigate('/login')}>Sign In</button>
+          )}
           <button className="fr-hamburger" onClick={() => setMobileNav(o => !o)} aria-label="Menu">
             {mobileNav ? <IcoX /> : <IcoMenu />}
           </button>
@@ -231,7 +248,14 @@ export default function Forums() {
         <aside className="fr-compose">
           <h2 className="fr-compose-title">Write a Review</h2>
 
-          <form className="fr-form" onSubmit={handleSubmit}>
+          {!authUser ? (
+            <div className="fr-guest-prompt">
+              <p>Sign in to post a review.</p>
+              <button className="fr-submit" onClick={() => navigate('/login')}>Sign In</button>
+            </div>
+          ) : null}
+
+          <form className="fr-form" onSubmit={handleSubmit} style={!authUser ? { display: 'none' } : {}}>
 
             {/* Movie picker */}
             <div className="fr-label">Movie</div>
@@ -339,7 +363,12 @@ export default function Forums() {
             )}
           </div>
 
-          {displayPosts.length === 0 ? (
+          {feedError ? (
+            <div className="fr-empty">
+              <IcoForum />
+              <p>{feedError}</p>
+            </div>
+          ) : displayPosts.length === 0 ? (
             <div className="fr-empty">
               <IcoForum />
               <p>{filterMovie ? `No reviews for ${filterMovie.title} yet.` : 'No reviews yet. Be the first!'}</p>
