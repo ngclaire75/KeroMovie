@@ -89,9 +89,8 @@ export default function Forums() {
     return unsub;
   }, []);
 
-  // Firestore real-time listener — waits for auth to be confirmed first
+  // Firestore real-time listener — starts immediately since reads are public
   useEffect(() => {
-    if (!authReady) return;
     const q = query(collection(db, FORUMS_COL), orderBy('createdAt', 'desc'));
     const unsub = onSnapshot(
       q,
@@ -100,15 +99,15 @@ export default function Forums() {
         setFeedError('');
       },
       err => {
-        if (err.code === 'permission-denied') {
-          setFeedError('Permission denied — update your Firestore rules to allow authenticated reads on forums_posts.');
-        } else {
-          setFeedError('Could not load reviews. Please refresh.');
-        }
+        setFeedError(
+          err.code === 'permission-denied'
+            ? 'Permission denied — update Firestore rules: allow read: if true on forums_posts.'
+            : 'Could not load reviews. Please refresh.'
+        );
       }
     );
     return unsub;
-  }, [authReady]);
+  }, []);
 
   // TMDB debounced search
   useEffect(() => {
@@ -179,7 +178,11 @@ export default function Forums() {
       setHoverRating(0);
       setComment('');
     } catch (err) {
-      setFormError('Failed to post. Please try again.');
+      if (err.code === 'permission-denied') {
+        setFormError('Permission denied — check your Firestore rules.');
+      } else {
+        setFormError(err.message || 'Failed to post. Please try again.');
+      }
     }
     setSubmitting(false);
   }

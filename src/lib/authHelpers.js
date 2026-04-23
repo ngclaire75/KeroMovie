@@ -4,7 +4,6 @@ import {
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
-  sendEmailVerification,
   sendPasswordResetEmail,
   updatePassword,
   updateEmail,
@@ -21,20 +20,16 @@ const USERS = 'users';
 
 // ── Save profile to Firestore ────────────────────────────────
 async function saveProfile(user, extra = {}) {
-  const ref  = doc(db, USERS, user.uid);
-  const snap = await getDoc(ref);
-  if (!snap.exists()) {
-    await setDoc(ref, {
-      uid:       user.uid,
-      email:     user.email,
-      firstName: extra.firstName || user.displayName?.split(' ')[0] || '',
-      lastName:  extra.lastName  || user.displayName?.split(' ').slice(1).join(' ') || '',
-      username:  extra.username  || user.email?.split('@')[0] || '',
-      photoURL:  user.photoURL   || '',
-      provider:  extra.provider  || 'email',
-      createdAt: new Date().toISOString(),
-    });
-  }
+  await setDoc(doc(db, USERS, user.uid), {
+    uid:       user.uid,
+    email:     user.email,
+    firstName: extra.firstName || user.displayName?.split(' ')[0] || '',
+    lastName:  extra.lastName  || user.displayName?.split(' ').slice(1).join(' ') || '',
+    username:  extra.username  || user.email?.split('@')[0] || '',
+    photoURL:  user.photoURL   || '',
+    provider:  extra.provider  || 'email',
+    createdAt: new Date().toISOString(),
+  }, { merge: true });
 }
 
 // ── Check redirect result on page load ──────────────────────
@@ -59,36 +54,30 @@ export async function checkRedirectResult() {
 
 // ── Sign Up ──────────────────────────────────────────────────
 export async function signUp({ firstName, lastName, username, email, password }) {
-  // Create the auth user first — this authenticates the session so
-  // subsequent Firestore reads are permitted by security rules.
   const cred = await createUserWithEmailAndPassword(auth, email, password);
 
+  // Username uniqueness check — skip gracefully if rules deny it
   try {
-    // Username uniqueness check — requires Firestore rules to allow
-    // authenticated reads on /users. If rules deny it, skip the check
-    // rather than aborting the whole signup.
-    try {
-      const uq = query(collection(db, USERS), where('username', '==', username));
-      const us = await getDocs(uq);
-      if (!us.empty) {
-        await cred.user.delete();
-        throw new Error('Username already taken. Please choose another.');
-      }
-    } catch (checkErr) {
-      if (checkErr.message === 'Username already taken. Please choose another.') throw checkErr;
-      if (checkErr.code !== 'permission-denied' && checkErr.code !== 'PERMISSION_DENIED') throw checkErr;
-      // permission-denied on the query means Firestore rules need updating —
-      // proceed without uniqueness check so the account still gets created.
+    const uq = query(collection(db, USERS), where('username', '==', username));
+    const us = await getDocs(uq);
+    if (!us.empty) {
+      await cred.user.delete();
+      throw new Error('Username already taken. Please choose another.');
     }
-
-    await saveProfile(cred.user, { firstName, lastName, username, provider: 'email' });
-    await auth.signOut();
-  } catch (err) {
-    if (err.message !== 'Username already taken. Please choose another.') {
-      try { await cred.user.delete(); } catch {}
-    }
-    throw err;
+  } catch (checkErr) {
+    if (checkErr.message === 'Username already taken. Please choose another.') throw checkErr;
+    // Any other error (permission-denied, network) — skip uniqueness check
   }
+
+  // Save profile — if this fails, still sign out but surface the error
+  try {
+    await saveProfile(cred.user, { firstName, lastName, username, provider: 'email' });
+  } catch (profileErr) {
+    await auth.signOut();
+    throw new Error('Account created but profile could not be saved. Please contact support. (' + (profileErr.code || profileErr.message) + ')');
+  }
+
+  await auth.signOut();
 }
 
 // ── Sign In ──────────────────────────────────────────────────
