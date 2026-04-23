@@ -55,28 +55,15 @@ export async function checkRedirectResult() {
 // ── Sign Up ──────────────────────────────────────────────────
 export async function signUp({ firstName, lastName, username, email, password }) {
   const cred = await createUserWithEmailAndPassword(auth, email, password);
-
-  // Username uniqueness check — skip gracefully if rules deny it
-  try {
-    const uq = query(collection(db, USERS), where('username', '==', username));
-    const us = await getDocs(uq);
-    if (!us.empty) {
-      await cred.user.delete();
-      throw new Error('Username already taken. Please choose another.');
-    }
-  } catch (checkErr) {
-    if (checkErr.message === 'Username already taken. Please choose another.') throw checkErr;
-    // Any other error (permission-denied, network) — skip uniqueness check
-  }
-
-  // Save profile — if this fails, still sign out but surface the error
   try {
     await saveProfile(cred.user, { firstName, lastName, username, provider: 'email' });
-  } catch (profileErr) {
-    await auth.signOut();
-    throw new Error('Account created but profile could not be saved. Please contact support. (' + (profileErr.code || profileErr.message) + ')');
+  } catch (err) {
+    try { await cred.user.delete(); } catch {}
+    if (err.code === 'permission-denied') {
+      throw new Error('Account setup failed: Firestore rules are blocking the write. Update your Firebase rules and try again.');
+    }
+    throw err;
   }
-
   await auth.signOut();
 }
 

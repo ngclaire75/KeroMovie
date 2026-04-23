@@ -105,7 +105,15 @@ export default function Login() {
       go('login');
       setInfo('Account created! You can now log in.');
     } catch (err) {
-      setError(err.message || 'Sign up failed. Please try again.');
+      if (err.code === 'auth/email-already-in-use') {
+        setError('An account with this email already exists. Try logging in instead.');
+      } else if (err.code === 'auth/weak-password') {
+        setError('Password must be at least 6 characters.');
+      } else if (err.code === 'auth/invalid-email') {
+        setError('Please enter a valid email address.');
+      } else {
+        setError(err.message || 'Sign up failed. Please try again.');
+      }
     } finally { setLoading(false); }
   }
 

@@ -89,8 +89,9 @@ export default function Forums() {
     return unsub;
   }, []);
 
-  // Firestore real-time listener — starts immediately since reads are public
+  // Firestore real-time listener — restarts whenever auth state is resolved
   useEffect(() => {
+    if (!authReady) return;
     const q = query(collection(db, FORUMS_COL), orderBy('createdAt', 'desc'));
     const unsub = onSnapshot(
       q,
@@ -98,16 +99,10 @@ export default function Forums() {
         setPosts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
         setFeedError('');
       },
-      err => {
-        setFeedError(
-          err.code === 'permission-denied'
-            ? 'Permission denied — update Firestore rules: allow read: if true on forums_posts.'
-            : 'Could not load reviews. Please refresh.'
-        );
-      }
+      () => setFeedError('Could not load reviews. Please refresh.')
     );
     return unsub;
-  }, []);
+  }, [authReady, authUser]);
 
   // TMDB debounced search
   useEffect(() => {
