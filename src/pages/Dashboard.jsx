@@ -5,6 +5,7 @@ import { getProfile } from '../lib/authHelpers';
 import { useApp } from '../context/AppContext';
 import ProfileModal from '../components/ProfileModal/ProfileModal';
 import logo from '../../images/keromovielogo.png';
+import playlistBg from '../../images/playlistbackground.gif';
 import './dashboard.css';
 
 const TMDB_KEY  = import.meta.env.VITE_TMDB_KEY;
@@ -73,6 +74,13 @@ function genreLabel(ids = []) {
 function fmtTime(s) {
   if (s < 60) return `${s}s`;
   return `${Math.floor(s / 60)}m ${s % 60}s`;
+}
+
+function fmtSec(s) {
+  if (!s || s < 0) return '0:00';
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${m}:${sec.toString().padStart(2, '0')}`;
 }
 
 // ── AWS Rekognition (SigV4 signed, routed via Vite proxy) ──────────────
@@ -156,6 +164,9 @@ const IcoFire    = () => <svg viewBox="0 0 24 24" fill="currentColor" style={{co
 const IcoMusic   = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>;
 const IcoPause   = () => <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>;
 const IcoImdb    = () => <svg viewBox="0 0 24 24" fill="currentColor" style={{color:'#f5c518'}}><rect x="2" y="6" width="20" height="12" rx="2"/><text x="4" y="15" fontSize="7" fontWeight="900" fill="#000">IMDb</text></svg>;
+const IcoRepeat    = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>;
+const IcoHeart     = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>;
+const IcoHeartFill = () => <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>;
 
 // ── Main Dashboard ─────────────────────────────────────────────────────
 export default function Dashboard() {
@@ -177,9 +188,37 @@ export default function Dashboard() {
   const [castExpanded, setCastExpanded]     = useState(false);
 
   // Soundtrack
-  const [soundtrack,  setSoundtrack]  = useState([]);
-  const [playingIdx,  setPlayingIdx]  = useState(null);
-  const audioRef = useRef(null);
+  const [soundtrack,     setSoundtrack]     = useState([]);
+  const [playingIdx,     setPlayingIdx]     = useState(null);
+  const [nowPlaying,     setNowPlaying]     = useState(null);
+  const [stSearch,       setStSearch]       = useState('');
+  const [stMode,         setStMode]         = useState('featured');
+  const [stSearchResults,setStSearchResults]= useState([]);
+  const [stSearchMovie,  setStSearchMovie]  = useState('');
+  const [stSearching,    setStSearching]    = useState(false);
+  const [audioProgress, setAudioProgress] = useState(0);
+  const [audioCurSec,   setAudioCurSec]   = useState(0);
+  const [audioDurSec,   setAudioDurSec]   = useState(0);
+  const [loopTrack,     setLoopTrack]     = useState(false);
+  const audioRef  = useRef(null);
+  const loopRef   = useRef(false);
+
+  // Persistent user data
+  const [recentTracks,      setRecentTracks]      = useState(() => { try { return JSON.parse(localStorage.getItem('kero_recent_tracks') || '[]'); } catch { return []; } });
+  const [savedTracks,       setSavedTracks]       = useState(() => { try { return JSON.parse(localStorage.getItem('kero_saved_tracks') || '[]'); } catch { return []; } });
+  const [favCast,           setFavCast]           = useState(() => { try { return JSON.parse(localStorage.getItem('kero_fav_cast') || '[]'); } catch { return []; } });
+
+  // Cast search
+  const [castSearch,        setCastSearch]        = useState('');
+  const [castMode,          setCastMode]          = useState('featured');
+  const [castSearchResults, setCastSearchResults] = useState([]);
+  const [castSearchMovie,   setCastSearchMovie]   = useState('');
+  const [castSearching,     setCastSearching]     = useState(false);
+
+  // Actor modal
+  const [viewingActor,      setViewingActor]      = useState(null);
+  const [actorDetails,      setActorDetails]      = useState(null);
+  const [actorLoading,      setActorLoading]      = useState(false);
 
   // Reading time
   const synopsisRef     = useRef(null);
@@ -310,32 +349,246 @@ export default function Dashboard() {
   useEffect(() => {
     if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
     setPlayingIdx(null);
+    setNowPlaying(null);
+    setAudioProgress(0);
+    setAudioCurSec(0);
+    setAudioDurSec(0);
     setSoundtrack([]);
     if (!featured?.title) return;
-    fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(featured.title + ' soundtrack')}&media=music&entity=song&limit=8`)
+    const term = encodeURIComponent(featured.title + ' original motion picture soundtrack');
+    fetch(`https://itunes.apple.com/search?term=${term}&media=music&entity=song&limit=20`)
       .then(r => r.json())
-      .then(d => setSoundtrack((d.results || []).filter(t => t.previewUrl)))
+      .then(d => {
+        const KW = ['soundtrack', 'score', 'motion picture', 'original'];
+        const tracks = (d.results || []).filter(t => {
+          if (!t.previewUrl) return false;
+          const cn = (t.collectionName || '').toLowerCase();
+          return KW.some(kw => cn.includes(kw));
+        }).slice(0, 8);
+        setSoundtrack(tracks);
+      })
       .catch(() => setSoundtrack([]));
   }, [featured?.id]);
 
   // Stop audio on unmount
   useEffect(() => () => { if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; } }, []);
 
-  function toggleTrack(idx) {
-    const track = soundtrack[idx];
-    if (!track?.previewUrl) return;
-    if (playingIdx === idx) {
-      audioRef.current?.pause();
-      audioRef.current = null;
-      setPlayingIdx(null);
-      return;
-    }
+  function playTrackAudio(track, idx) {
     if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+    if (!track?.previewUrl) return;
     const audio = new Audio(track.previewUrl);
+    audio.loop = loopRef.current;
+    audio.ontimeupdate = () => {
+      if (!audio.duration) return;
+      setAudioProgress(audio.currentTime / audio.duration);
+      setAudioCurSec(audio.currentTime);
+      setAudioDurSec(audio.duration);
+    };
+    audio.onloadedmetadata = () => setAudioDurSec(audio.duration);
+    audio.onended = () => {
+      if (!loopRef.current) {
+        audioRef.current = null;
+        setPlayingIdx(null);
+        setAudioProgress(0);
+        setAudioCurSec(0);
+      }
+    };
     audio.play().catch(() => {});
-    audio.onended = () => setPlayingIdx(null);
     audioRef.current = audio;
     setPlayingIdx(idx);
+  }
+
+  function openTrack(idx) {
+    const list = stMode === 'search' ? stSearchResults : soundtrack;
+    const track = list[idx];
+    if (!track) return;
+    setAudioProgress(0);
+    setAudioCurSec(0);
+    setAudioDurSec(0);
+    setNowPlaying({ ...track, idx });
+    playTrackAudio(track, idx);
+    addToRecentTracks(track);
+  }
+
+  function toggleNowPlayingPlayback() {
+    if (!nowPlaying) return;
+    if (!audioRef.current) { playTrackAudio(nowPlaying, nowPlaying.idx); return; }
+    if (audioRef.current.paused) {
+      audioRef.current.play().catch(() => {});
+      setPlayingIdx(nowPlaying.idx);
+    } else {
+      audioRef.current.pause();
+      setPlayingIdx(null);
+    }
+  }
+
+  function seekAudio(ratio) {
+    if (!audioRef.current) return;
+    const d = audioRef.current.duration;
+    if (!d) return;
+    const t = ratio * d;
+    audioRef.current.currentTime = t;
+    setAudioProgress(ratio);
+    setAudioCurSec(t);
+  }
+
+  function toggleLoop() {
+    const next = !loopTrack;
+    setLoopTrack(next);
+    loopRef.current = next;
+    if (audioRef.current) audioRef.current.loop = next;
+  }
+
+  function closeNowPlaying() {
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+    setNowPlaying(null);
+    setPlayingIdx(null);
+    setAudioProgress(0);
+    setAudioCurSec(0);
+    setAudioDurSec(0);
+  }
+
+  async function searchSoundtrack(e) {
+    e.preventDefault();
+    if (!stSearch.trim()) return;
+    setStSearching(true);
+    setStSearchResults([]);
+    const term = encodeURIComponent(stSearch.trim() + ' original motion picture soundtrack');
+    try {
+      const d = await fetch(
+        `https://itunes.apple.com/search?term=${term}&media=music&entity=song&limit=20`
+      ).then(r => r.json());
+      const KW = ['soundtrack', 'score', 'motion picture', 'original'];
+      const tracks = (d.results || []).filter(t => {
+        if (!t.previewUrl) return false;
+        const cn = (t.collectionName || '').toLowerCase();
+        return KW.some(kw => cn.includes(kw));
+      }).slice(0, 8);
+      setStSearchResults(tracks);
+      setStSearchMovie(stSearch.trim());
+      setStMode('search');
+    } catch {
+      setStSearchResults([]);
+      setStSearchMovie(stSearch.trim());
+      setStMode('search');
+    }
+    setStSearching(false);
+  }
+
+  function clearSoundtrackSearch() {
+    closeNowPlaying();
+    setStSearch('');
+    setStMode('featured');
+    setStSearchResults([]);
+    setStSearchMovie('');
+  }
+
+  function addToRecentTracks(track) {
+    setRecentTracks(prev => {
+      const filtered = prev.filter(t => t.trackId !== track.trackId);
+      const next = [track, ...filtered].slice(0, 12);
+      localStorage.setItem('kero_recent_tracks', JSON.stringify(next));
+      return next;
+    });
+  }
+
+  function toggleSaveTrack(track) {
+    setSavedTracks(prev => {
+      const exists = prev.some(t => t.trackId === track.trackId);
+      const next = exists ? prev.filter(t => t.trackId !== track.trackId) : [track, ...prev].slice(0, 24);
+      localStorage.setItem('kero_saved_tracks', JSON.stringify(next));
+      return next;
+    });
+  }
+
+  function isSavedTrack(trackId) {
+    return savedTracks.some(t => t.trackId === trackId);
+  }
+
+  function toggleFavCast(actor) {
+    setFavCast(prev => {
+      const exists = prev.some(a => a.id === actor.id);
+      const next = exists ? prev.filter(a => a.id !== actor.id) : [actor, ...prev].slice(0, 24);
+      localStorage.setItem('kero_fav_cast', JSON.stringify(next));
+      return next;
+    });
+  }
+
+  function isFavCastMember(actorId) {
+    return favCast.some(a => a.id === actorId);
+  }
+
+  function openRecentTrack(track) {
+    setAudioProgress(0);
+    setAudioCurSec(0);
+    setAudioDurSec(0);
+    setNowPlaying({ ...track, idx: -1 });
+    playTrackAudio(track, -1);
+  }
+
+  async function searchCast(e) {
+    e.preventDefault();
+    if (!castSearch.trim()) return;
+    setCastSearching(true);
+    setCastSearchResults([]);
+    try {
+      const movies = await fetch(
+        `${TMDB_BASE}/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(castSearch.trim())}&language=en-US`
+      ).then(r => r.json());
+      const movie = movies.results?.[0];
+      if (!movie) {
+        setCastSearchResults([]);
+        setCastSearchMovie(castSearch.trim());
+        setCastMode('search');
+        setCastSearching(false);
+        return;
+      }
+      const credits = await fetch(
+        `${TMDB_BASE}/movie/${movie.id}/credits?api_key=${TMDB_KEY}`
+      ).then(r => r.json());
+      setCastSearchResults((credits.cast || []).slice(0, 12));
+      setCastSearchMovie(castSearch.trim());
+      setCastMode('search');
+    } catch {
+      setCastSearchResults([]);
+      setCastSearchMovie(castSearch.trim());
+      setCastMode('search');
+    }
+    setCastSearching(false);
+  }
+
+  function clearCastSearch() {
+    setCastSearch('');
+    setCastMode('featured');
+    setCastSearchResults([]);
+    setCastSearchMovie('');
+  }
+
+  async function openActor(actor) {
+    setViewingActor(actor);
+    setActorDetails(null);
+    setActorLoading(true);
+    try {
+      const [details, credits] = await Promise.all([
+        fetch(`${TMDB_BASE}/person/${actor.id}?api_key=${TMDB_KEY}&language=en-US`).then(r => r.json()),
+        fetch(`${TMDB_BASE}/person/${actor.id}/movie_credits?api_key=${TMDB_KEY}&language=en-US`).then(r => r.json()),
+      ]);
+      setActorDetails({
+        ...details,
+        movies: (credits.cast || [])
+          .filter(m => m.poster_path)
+          .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
+          .slice(0, 8),
+      });
+    } catch {
+      setActorDetails(null);
+    }
+    setActorLoading(false);
+  }
+
+  function closeActor() {
+    setViewingActor(null);
+    setActorDetails(null);
   }
 
   // Bookmark movie details
@@ -755,6 +1008,63 @@ export default function Dashboard() {
               </div>
             </section>
 
+            {/* ── Recently Played ── */}
+            {recentTracks.length > 0 && (
+              <section className="db-section">
+                <div className="db-section-row">
+                  <span className="db-section-title">Recently Played</span>
+                  <button className="db-section-more db-section-more-btn" onClick={() => { setRecentTracks([]); localStorage.removeItem('kero_recent_tracks'); }}>Clear</button>
+                </div>
+                <div className="db-rp-grid">
+                  {recentTracks.slice(0, 6).map(track => (
+                    <div key={track.trackId} className="db-rp-item" onClick={() => openRecentTrack(track)}>
+                      <img src={track.artworkUrl100} alt={track.trackName} className="db-rp-art" />
+                      <p className="db-rp-name">{track.trackName}</p>
+                      <p className="db-rp-artist">{track.artistName}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* ── Saved Soundtracks ── */}
+            {savedTracks.length > 0 && (
+              <section className="db-section">
+                <div className="db-section-row">
+                  <span className="db-section-title">Saved Soundtracks</span>
+                </div>
+                <div className="db-rp-grid">
+                  {savedTracks.slice(0, 6).map(track => (
+                    <div key={track.trackId} className="db-rp-item" onClick={() => openRecentTrack(track)}>
+                      <img src={track.artworkUrl100} alt={track.trackName} className="db-rp-art" />
+                      <p className="db-rp-name">{track.trackName}</p>
+                      <p className="db-rp-artist">{track.artistName}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* ── Favourite Cast ── */}
+            {favCast.length > 0 && (
+              <section className="db-section">
+                <div className="db-section-row">
+                  <span className="db-section-title">Favourite Cast</span>
+                </div>
+                <div className="db-fc-grid">
+                  {favCast.map(actor => (
+                    <div key={actor.id} className="db-fc-item" onClick={() => openActor(actor)}>
+                      {actor.profile_path
+                        ? <img src={`${IMG_W200}${actor.profile_path}`} alt={actor.name} className="db-fc-photo" />
+                        : <div className="db-fc-photo db-fc-photo--ph"><IcoUser /></div>
+                      }
+                      <p className="db-fc-name">{actor.name}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
           </div>
 
           {/* ──────── RIGHT PANEL ──────── */}
@@ -801,58 +1111,163 @@ export default function Dashboard() {
             </div>
 
             {/* Cast / Actors List */}
-            {cast.length > 0 && (
+            {(cast.length > 0 || castMode === 'search') && (
               <div className="db-panel-block">
                 <div className="db-section-row">
-                  <span className="db-section-title">Full Cast</span>
-                  <span className="db-section-sub db-cast-movie">{featured?.title}</span>
+                  <span className="db-section-title">Cast</span>
+                  <span className="db-section-sub db-cast-movie">
+                    {castMode === 'search' ? castSearchMovie : featured?.title}
+                  </span>
                 </div>
-                <div className="db-cast-list">
-                  {visibleCast.map(actor => (
-                    <div key={actor.credit_id} className="db-cast-item">
-                      {actor.profile_path
-                        ? <img src={`${IMG_W200}${actor.profile_path}`} alt={actor.name} className="db-cast-photo" />
-                        : <div className="db-cast-photo db-cast-photo--ph"><IcoUser /></div>
-                      }
-                      <div className="db-cast-info">
-                        <p className="db-cast-name">{actor.name}</p>
-                        {actor.character && <p className="db-cast-char">as {actor.character}</p>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {cast.length > 8 && (
-                  <button className="db-cast-toggle" onClick={() => setCastExpanded(e => !e)}>
-                    {castExpanded ? 'Show less' : `Show all ${cast.length} cast members`}
-                    <IcoArrow />
+
+                {/* Cast search */}
+                <form className="db-st-search" onSubmit={searchCast}>
+                  <input
+                    className="db-st-search-input"
+                    type="text"
+                    placeholder="Search cast by movie…"
+                    value={castSearch}
+                    onChange={e => setCastSearch(e.target.value)}
+                  />
+                  {castMode === 'search' && (
+                    <button type="button" className="db-st-clear-btn" onClick={clearCastSearch} title="Back to featured">
+                      <IcoX />
+                    </button>
+                  )}
+                  <button type="submit" className="db-st-search-btn" disabled={castSearching || !castSearch.trim()}>
+                    {castSearching ? <span className="db-st-spin" /> : <IcoExplore />}
                   </button>
+                </form>
+
+                {/* Cast results */}
+                {castSearching ? (
+                  <div className="db-st-skeleton">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <div key={i} className="db-st-skel-item">
+                        <div className="db-st-skel-art db-skel-shimmer" style={{ borderRadius: '50%' }} />
+                        <div className="db-st-skel-info">
+                          <div className="db-st-skel-line db-st-skel-line--name db-skel-shimmer" />
+                          <div className="db-st-skel-line db-st-skel-line--artist db-skel-shimmer" />
+                        </div>
+                        <div className="db-st-skel-btn db-skel-shimmer" style={{ borderRadius: '50%' }} />
+                      </div>
+                    ))}
+                  </div>
+                ) : (castMode === 'search' ? castSearchResults : visibleCast).length === 0 ? (
+                  <div className="db-empty">
+                    <IcoUser />
+                    <p>{castMode === 'search' ? 'No Cast Found' : 'No cast available.'}</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="db-cast-list">
+                      {(castMode === 'search' ? castSearchResults : visibleCast).map(actor => (
+                        <div key={actor.credit_id || actor.id} className="db-cast-item db-cast-item--clickable" onClick={() => openActor(actor)}>
+                          {actor.profile_path
+                            ? <img src={`${IMG_W200}${actor.profile_path}`} alt={actor.name} className="db-cast-photo" />
+                            : <div className="db-cast-photo db-cast-photo--ph"><IcoUser /></div>
+                          }
+                          <div className="db-cast-info">
+                            <p className="db-cast-name">{actor.name}</p>
+                            {actor.character && <p className="db-cast-char">as {actor.character}</p>}
+                          </div>
+                          <button
+                            className={`db-cast-fav-btn${isFavCastMember(actor.id) ? ' db-cast-fav-btn--on' : ''}`}
+                            onClick={e => { e.stopPropagation(); toggleFavCast(actor); }}
+                            title={isFavCastMember(actor.id) ? 'Remove from favourites' : 'Add to favourites'}
+                          >
+                            {isFavCastMember(actor.id) ? <IcoHeartFill /> : <IcoHeart />}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    {castMode === 'featured' && cast.length > 8 && (
+                      <button className="db-cast-toggle" onClick={() => setCastExpanded(e => !e)}>
+                        {castExpanded ? 'Show less' : `Show all ${cast.length} cast members`}
+                        <IcoArrow />
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             )}
 
             {/* Soundtrack */}
-            {soundtrack.length > 0 && (
-              <div className="db-panel-block">
-                <div className="db-section-row">
-                  <span className="db-section-title"><IcoMusic /> Soundtrack</span>
-                  <span className="db-section-sub">{featured?.title}</span>
-                </div>
-                <div className="db-soundtrack-list">
-                  {soundtrack.map((track, idx) => (
-                    <div key={track.trackId} className={`db-soundtrack-item${playingIdx === idx ? ' db-soundtrack-item--playing' : ''}`}>
-                      <img src={track.artworkUrl100} alt={track.trackName} className="db-soundtrack-art" />
-                      <div className="db-soundtrack-info">
-                        <p className="db-soundtrack-name">{track.trackName}</p>
-                        <p className="db-soundtrack-artist">{track.artistName}</p>
-                      </div>
-                      <button className="db-soundtrack-btn" onClick={() => toggleTrack(idx)} title={playingIdx === idx ? 'Pause' : 'Play'}>
-                        {playingIdx === idx ? <IcoPause /> : <IcoPlay />}
+            {featured && (() => {
+              const displayTracks = stMode === 'search' ? stSearchResults : soundtrack;
+              const subLabel      = stMode === 'search' ? stSearchMovie : featured.title;
+              const emptyMsg      = stMode === 'search' ? 'Soundtrack Not Found' : 'No Soundtrack For This Movie';
+              return (
+                <div className="db-panel-block">
+                  <div className="db-section-row">
+                    <span className="db-section-title">Soundtrack <span className="db-title-music-ico"><IcoMusic /></span></span>
+                    <span className="db-section-sub">{subLabel}</span>
+                  </div>
+
+                  {/* Search bar */}
+                  <form className="db-st-search" onSubmit={searchSoundtrack}>
+                    <input
+                      className="db-st-search-input"
+                      type="text"
+                      placeholder="Search movie soundtrack…"
+                      value={stSearch}
+                      onChange={e => setStSearch(e.target.value)}
+                    />
+                    {stMode === 'search' && (
+                      <button type="button" className="db-st-clear-btn" onClick={clearSoundtrackSearch} title="Back to featured">
+                        <IcoX />
                       </button>
+                    )}
+                    <button type="submit" className="db-st-search-btn" disabled={stSearching || !stSearch.trim()}>
+                      {stSearching ? <span className="db-st-spin" /> : <IcoExplore />}
+                    </button>
+                  </form>
+
+                  {/* Results */}
+                  {stSearching ? (
+                    <div className="db-st-skeleton">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} className="db-st-skel-item">
+                          <div className="db-st-skel-art db-skel-shimmer" />
+                          <div className="db-st-skel-info">
+                            <div className="db-st-skel-line db-st-skel-line--name db-skel-shimmer" />
+                            <div className="db-st-skel-line db-st-skel-line--artist db-skel-shimmer" />
+                          </div>
+                          <div className="db-st-skel-btn db-skel-shimmer" />
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  ) : displayTracks.length === 0 ? (
+                    <div className="db-empty">
+                      <IcoMusic />
+                      <p>{emptyMsg}</p>
+                    </div>
+                  ) : (
+                    <div className="db-soundtrack-list">
+                      {displayTracks.map((track, idx) => (
+                        <div key={track.trackId} className={`db-soundtrack-item${playingIdx === idx ? ' db-soundtrack-item--playing' : ''}`} onClick={() => openTrack(idx)}>
+                          <img src={track.artworkUrl100} alt={track.trackName} className="db-soundtrack-art" />
+                          <div className="db-soundtrack-info">
+                            <p className="db-soundtrack-name">{track.trackName}</p>
+                            <p className="db-soundtrack-artist">{track.artistName}</p>
+                          </div>
+                          <button
+                            className={`db-st-heart-btn${isSavedTrack(track.trackId) ? ' db-st-heart-btn--on' : ''}`}
+                            onClick={e => { e.stopPropagation(); toggleSaveTrack(track); }}
+                            title={isSavedTrack(track.trackId) ? 'Remove from saved' : 'Save'}
+                          >
+                            {isSavedTrack(track.trackId) ? <IcoHeartFill /> : <IcoHeart />}
+                          </button>
+                          <span className="db-soundtrack-btn">
+                            {playingIdx === idx ? <IcoPause /> : <IcoPlay />}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Taste Profile */}
             {(() => {
@@ -926,6 +1341,162 @@ export default function Dashboard() {
           </aside>
         </div>
       </div>
+
+      {/* ── Now Playing Modal ── */}
+      {nowPlaying && (
+        <div className="db-np-overlay" onClick={closeNowPlaying}>
+          <div className="db-np-bg" style={{ backgroundImage: `url(${playlistBg})` }} />
+          <div className="db-np-modal" onClick={e => e.stopPropagation()}>
+            <button className="db-np-close" onClick={closeNowPlaying} title="Close"><IcoX /></button>
+
+            <div className="db-np-left">
+              {/* Track meta */}
+              <div className="db-np-meta">
+                <p className="db-np-track">{nowPlaying.trackName}</p>
+                <p className="db-np-artist">{nowPlaying.artistName}</p>
+                <p className="db-np-album">{nowPlaying.collectionName}</p>
+                <div className="db-np-details">
+                  {nowPlaying.primaryGenreName && <span>{nowPlaying.primaryGenreName}</span>}
+                  {nowPlaying.releaseDate && <span>{new Date(nowPlaying.releaseDate).getFullYear()}</span>}
+                </div>
+              </div>
+
+              {/* Save button */}
+              <button
+                className={`db-np-heart-btn${isSavedTrack(nowPlaying.trackId) ? ' db-np-heart-btn--on' : ''}`}
+                onClick={() => toggleSaveTrack(nowPlaying)}
+                title={isSavedTrack(nowPlaying.trackId) ? 'Remove from saved' : 'Save soundtrack'}
+              >
+                {isSavedTrack(nowPlaying.trackId) ? <IcoHeartFill /> : <IcoHeart />}
+                {isSavedTrack(nowPlaying.trackId) ? 'Saved' : 'Save'}
+              </button>
+
+              {/* Contributors */}
+              <div className="db-np-contributors">
+                <div className="db-np-contrib-row">
+                  <span className="db-np-contrib-label">Performed by</span>
+                  <span className="db-np-contrib-value">{nowPlaying.artistName}</span>
+                </div>
+                {nowPlaying.composerName && nowPlaying.composerName !== nowPlaying.artistName && (
+                  <div className="db-np-contrib-row">
+                    <span className="db-np-contrib-label">Written by</span>
+                    <span className="db-np-contrib-value">{nowPlaying.composerName}</span>
+                  </div>
+                )}
+                {nowPlaying.collectionArtistName && nowPlaying.collectionArtistName !== nowPlaying.artistName && (
+                  <div className="db-np-contrib-row">
+                    <span className="db-np-contrib-label">Album artist</span>
+                    <span className="db-np-contrib-value">{nowPlaying.collectionArtistName}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Progress + time */}
+              <div className="db-np-seek-area">
+                <div
+                  className="db-np-progress-wrap"
+                  onClick={e => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    seekAudio((e.clientX - rect.left) / rect.width);
+                  }}
+                >
+                  <div className="db-np-progress-bar" style={{ width: `${audioProgress * 100}%` }} />
+                </div>
+                <div className="db-np-time-row">
+                  <span>{fmtSec(audioCurSec)}</span>
+                  <span>{fmtSec(audioDurSec)}</span>
+                </div>
+              </div>
+
+              {/* Controls */}
+              <div className="db-np-controls">
+                <button
+                  className={`db-np-loop-btn${loopTrack ? ' db-np-loop-btn--on' : ''}`}
+                  onClick={toggleLoop}
+                  title={loopTrack ? 'Repeat on — click to turn off' : 'Repeat off — click to turn on'}
+                >
+                  <IcoRepeat />
+                </button>
+                <button className="db-np-playbtn" onClick={toggleNowPlayingPlayback}>
+                  {playingIdx === nowPlaying.idx ? <IcoPause /> : <IcoPlay />}
+                </button>
+              </div>
+            </div>
+
+            <div className="db-np-right">
+              <div className={`db-np-disc${playingIdx === nowPlaying.idx ? ' db-np-disc--spinning' : ''}`}>
+                <img
+                  src={(nowPlaying.artworkUrl100 || '').replace(/\d+x\d+bb/, '600x600bb')}
+                  alt={nowPlaying.trackName}
+                  className="db-np-disc-img"
+                />
+                <div className="db-np-disc-hole" />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Actor Detail Modal ── */}
+      {viewingActor && (
+        <div className="db-actor-overlay" onClick={closeActor}>
+          <div className="db-np-bg" style={{ backgroundImage: `url(${playlistBg})` }} />
+          <div className="db-actor-modal" onClick={e => e.stopPropagation()}>
+            <button className="db-np-close" onClick={closeActor} title="Close"><IcoX /></button>
+
+            <div className="db-actor-left">
+              {viewingActor.profile_path
+                ? <img src={`${IMG_W500}${viewingActor.profile_path}`} alt={viewingActor.name} className="db-actor-photo" />
+                : <div className="db-actor-photo db-actor-photo--ph"><IcoUser /></div>
+              }
+              <button
+                className={`db-actor-fav-btn${isFavCastMember(viewingActor.id) ? ' db-actor-fav-btn--on' : ''}`}
+                onClick={() => toggleFavCast(viewingActor)}
+                title={isFavCastMember(viewingActor.id) ? 'Remove from favourites' : 'Add to favourites'}
+              >
+                {isFavCastMember(viewingActor.id) ? <IcoHeartFill /> : <IcoHeart />}
+                {isFavCastMember(viewingActor.id) ? 'Favourited' : 'Favourite'}
+              </button>
+            </div>
+
+            <div className="db-actor-right">
+              {actorLoading ? (
+                <div className="db-actor-loading"><span className="db-scanner-spin" /></div>
+              ) : actorDetails ? (
+                <>
+                  <h2 className="db-actor-name">{actorDetails.name}</h2>
+                  {actorDetails.birthday && (
+                    <p className="db-actor-meta">
+                      Born {actorDetails.birthday}
+                      {actorDetails.place_of_birth ? ` · ${actorDetails.place_of_birth}` : ''}
+                    </p>
+                  )}
+                  {actorDetails.biography ? (
+                    <p className="db-actor-bio">
+                      {actorDetails.biography.length > 600 ? actorDetails.biography.slice(0, 600) + '…' : actorDetails.biography}
+                    </p>
+                  ) : null}
+                  {actorDetails.movies?.length > 0 && (
+                    <div className="db-actor-movies">
+                      <p className="db-actor-movies-label">Known for</p>
+                      <div className="db-actor-movies-grid">
+                        {actorDetails.movies.map(m => (
+                          <div key={m.id} className="db-actor-movie-item">
+                            <img src={`${IMG_W200}${m.poster_path}`} alt={m.title} className="db-actor-movie-poster" />
+                            <p className="db-actor-movie-title">{m.title}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="db-empty"><IcoUser /><p>Could not load actor details.</p></div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Profile Modal ── */}
       {profileOpen && (
