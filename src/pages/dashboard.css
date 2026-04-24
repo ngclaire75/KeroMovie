@@ -1918,6 +1918,14 @@
     padding: 16px 14px 24px;
     gap: 20px;
     overflow: visible;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .db-panel-block {
+    width: 100%;
+    max-width: 460px;
   }
 
   /* Hero — fixed height on mobile too, wider content since poster is hidden */
@@ -1961,25 +1969,34 @@
   /* Right panel sections */
   .db-bm-list { max-height: none; }
 
-  /* Cast list — independently scrollable, always in frame */
+  /* Cast list — fixed height, scrollable, no scrollbar */
   .db-cast-list {
-    max-height: min(300px, 40vh);
+    height: 200px;
+    min-height: 200px;
+    max-height: 200px;
     overflow-y: scroll;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
+    scrollbar-width: none;
   }
+  .db-cast-list::-webkit-scrollbar { display: none; }
 
-  /* Soundtrack list — independently scrollable, always in frame */
+  /* Soundtrack list — fixed height, scrollable, no scrollbar */
   .db-soundtrack-list {
-    max-height: min(280px, 38vh);
+    height: 200px;
+    min-height: 200px;
+    max-height: 200px;
     overflow-y: scroll;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
+    scrollbar-width: none;
   }
+  .db-soundtrack-list::-webkit-scrollbar { display: none; }
 
-  /* Skeleton stays contained too */
+  /* Skeleton stays contained */
   .db-st-skeleton {
-    max-height: min(280px, 38vh);
+    height: 200px;
+    max-height: 200px;
     overflow-y: hidden;
   }
 
@@ -2413,10 +2430,19 @@ button.db-section-more,
 }
 
 @media (max-width: 600px) {
+  .db-actor-overlay {
+    align-items: center;
+    padding: 20px 16px;
+  }
+
   .db-actor-modal {
     flex-direction: column;
-    max-height: 95vh;
+    height: 72vh;
+    min-height: 72vh;
+    max-height: 72vh;
+    border-radius: 16px;
     overflow-y: auto;
+    overflow-x: hidden;
     scrollbar-width: none;
   }
   .db-actor-modal::-webkit-scrollbar { display: none; }
@@ -2424,22 +2450,25 @@ button.db-section-more,
   .db-actor-left {
     width: 100%;
     flex-direction: row;
-    padding: 20px 20px 16px;
-    gap: 16px;
+    padding: 14px 16px 10px;
+    gap: 12px;
     align-items: center;
     background: rgba(0,0,0,0.3);
+    flex-shrink: 0;
   }
 
-  .db-actor-photo { width: 80px; height: 108px; }
-  .db-actor-photo--ph { width: 80px; height: 108px; }
-  .db-actor-photo--ph svg { width: 28px; height: 28px; }
+  .db-actor-photo { width: 64px; height: 86px; }
+  .db-actor-photo--ph { width: 64px; height: 86px; }
+  .db-actor-photo--ph svg { width: 22px; height: 22px; }
 
   .db-actor-right {
-    padding: 16px 20px 24px;
-    gap: 12px;
+    padding: 12px 16px 20px;
+    gap: 10px;
+    overflow-y: visible;
+    flex-shrink: 0;
   }
 
-  .db-actor-name { font-size: 1.2rem; }
+  .db-actor-name { font-size: 1.1rem; }
   .db-actor-movies-grid { grid-template-columns: repeat(3, 1fr); }
 }
 

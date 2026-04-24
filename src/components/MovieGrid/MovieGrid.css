@@ -537,32 +537,40 @@
 
 /* ── Responsive ── */
 @media (max-width: 640px) {
-  .mg-modal-overlay { padding: 12px; }
+  .mg-modal-overlay {
+    padding: 16px;
+    align-items: center;
+  }
 
   .mg-modal {
     flex-direction: column;
-    max-height: 92vh;
+    max-height: 62vh;
     border-radius: 16px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
   }
+
+  .mg-modal::-webkit-scrollbar { display: none; }
 
   .mg-modal-poster-side {
     width: 100%;
-    padding: 24px 24px 12px;
+    padding: 18px 20px 8px;
     background: none;
     justify-content: center;
+    flex-shrink: 0;
   }
 
-  .mg-modal-poster-img {
-    width: 120px;
-  }
-
-  .mg-modal-poster-ph { width: 120px; aspect-ratio: 2/3; }
+  .mg-modal-poster-img { width: 100px; }
+  .mg-modal-poster-ph  { width: 100px; aspect-ratio: 2/3; }
 
   .mg-modal-content {
-    padding: 4px 22px 28px;
-    gap: 12px;
+    padding: 6px 20px 24px;
+    gap: 10px;
+    overflow-y: visible;
+    flex-shrink: 0;
   }
 
-  .mg-modal-title { font-size: 1.3rem; }
-  .mg-modal-overview { font-size: 0.82rem; }
+  .mg-modal-title    { font-size: 1.25rem; }
+  .mg-modal-overview { font-size: 0.81rem; }
 }
