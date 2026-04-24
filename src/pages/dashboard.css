@@ -434,7 +434,7 @@
   flex-direction: column;
   justify-content: space-between;
   overflow: hidden;
-  gap: 6px;
+  gap: 4px;
 }
 
 .db-hero-desc {
@@ -1233,7 +1233,7 @@
 .db-st-search {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .db-st-search-input {
@@ -1449,7 +1449,7 @@
 .db-np-seek-area {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .db-np-progress-wrap {
@@ -2000,9 +2000,9 @@
 
 /* ── Recently Played / Saved Soundtracks grid ── */
 .db-rp-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .db-rp-item {
@@ -2078,9 +2078,9 @@
 
 /* ── Favourite Cast grid ── */
 .db-fc-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .db-fc-item {
@@ -2413,8 +2413,6 @@ button.db-section-more,
 }
 
 @media (max-width: 479px) {
-  .db-rp-grid { grid-template-columns: repeat(3, 1fr); }
-  .db-fc-grid { grid-template-columns: repeat(3, 1fr); }
   .db-actor-movies-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
