@@ -6,13 +6,12 @@ import {
   getRedirectResult,
   sendPasswordResetEmail,
   updatePassword,
-  updateEmail,
+  verifyBeforeUpdateEmail,
   reauthenticateWithCredential,
   EmailAuthProvider,
 } from 'firebase/auth';
 import {
   doc, setDoc, getDoc, updateDoc,
-  query, collection, where, getDocs,
 } from 'firebase/firestore';
 import { auth, db, googleProvider, appleProvider } from './firebase';
 
@@ -166,9 +165,6 @@ export async function getProfile(uid) {
 
 // ── Update Username ──────────────────────────────────────────
 export async function updateUsername(uid, newUsername) {
-  const uq   = query(collection(db, USERS), where('username', '==', newUsername));
-  const snap = await getDocs(uq);
-  if (!snap.empty) throw new Error('Username already taken. Please choose another.');
   await updateDoc(doc(db, USERS, uid), { username: newUsername });
 }
 
@@ -185,6 +181,5 @@ export async function updateUserEmail(currentPassword, newEmail) {
   const user       = auth.currentUser;
   const credential = EmailAuthProvider.credential(user.email, currentPassword);
   await reauthenticateWithCredential(user, credential);
-  await updateEmail(user, newEmail);
-  await updateDoc(doc(db, USERS, user.uid), { email: newEmail });
+  await verifyBeforeUpdateEmail(user, newEmail);
 }

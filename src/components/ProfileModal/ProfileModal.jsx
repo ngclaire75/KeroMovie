@@ -158,9 +158,8 @@ export default function ProfileModal({ profile, onClose, onProfileUpdate }) {
     setSaving('email');
     try {
       await updateUserEmail(emailPw, newEmail.trim());
-      onProfileUpdate?.({ ...profile, email: newEmail.trim() });
       setNewEmail(''); setEmailPw('');
-      flashSuccess('Email updated. Please verify your new address.');
+      flashSuccess('Verification email sent. Click the link in your inbox to complete the change.');
     } catch (err) {
       flashError(err.code === 'auth/wrong-password' ? 'Current password is incorrect.' : err.message || 'Failed to update email.');
     } finally { setSaving(''); }
