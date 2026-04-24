@@ -2008,11 +2008,11 @@
 .db-rp-item {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 5px;
   cursor: pointer;
   transition: opacity 0.18s;
-  text-align: center;
+  text-align: left;
 }
 
 .db-rp-item:hover { opacity: 0.78; }
