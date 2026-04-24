@@ -1146,6 +1146,9 @@ export default function Dashboard() {
                     placeholder="Search cast by movie…"
                     value={castSearch}
                     onChange={e => setCastSearch(e.target.value)}
+                    enterKeyHint="search"
+                    inputMode="search"
+                    autoComplete="off"
                   />
                   {castMode === 'search' && (
                     <button type="button" className="db-st-clear-btn" onClick={clearCastSearch} title="Back to featured">
@@ -1230,6 +1233,9 @@ export default function Dashboard() {
                       placeholder="Search movie soundtrack…"
                       value={stSearch}
                       onChange={e => setStSearch(e.target.value)}
+                      enterKeyHint="search"
+                      inputMode="search"
+                      autoComplete="off"
                     />
                     {stMode === 'search' && (
                       <button type="button" className="db-st-clear-btn" onClick={clearSoundtrackSearch} title="Back to featured">

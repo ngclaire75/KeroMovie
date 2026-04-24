@@ -1960,7 +1960,28 @@
 
   /* Right panel sections */
   .db-bm-list { max-height: none; }
-  .db-cast-list { max-height: 320px; }
+
+  /* Cast list — independently scrollable, always in frame */
+  .db-cast-list {
+    max-height: min(300px, 40vh);
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  /* Soundtrack list — independently scrollable, always in frame */
+  .db-soundtrack-list {
+    max-height: min(280px, 38vh);
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  /* Skeleton stays contained too */
+  .db-st-skeleton {
+    max-height: min(280px, 38vh);
+    overflow-y: hidden;
+  }
 
   /* Prevent iOS Safari auto-zoom on input focus (requires >= 16px) */
   .db-st-search-input { font-size: 16px; }
@@ -2358,9 +2379,8 @@ button.db-section-more,
 }
 
 .db-actor-movie-item {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  position: relative;
+  display: block;
 }
 
 .db-actor-movie-poster {
@@ -2368,17 +2388,28 @@ button.db-section-more,
   aspect-ratio: 2/3;
   border-radius: 8px;
   object-fit: cover;
+  display: block;
 }
 
 .db-actor-movie-title {
-  font-size: 0.62rem;
-  color: var(--db-text2);
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background: var(--db-red);
+  color: #fff;
+  font-size: 0.58rem;
+  font-weight: 700;
+  padding: 3px 6px;
+  border-radius: 4px 0 8px 0;
+  max-width: 90%;
   margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  line-height: 1.3;
+  word-break: break-word;
 }
 
 @media (max-width: 600px) {
