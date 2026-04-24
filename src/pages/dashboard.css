@@ -2017,14 +2017,40 @@
 
 .db-rp-item:hover { opacity: 0.78; }
 
+.db-rp-art-wrap {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
 .db-rp-art {
   width: 72px;
   height: 72px;
   border-radius: 8px;
   object-fit: cover;
-  image-rendering: auto;
-  flex-shrink: 0;
+  display: block;
 }
+
+.db-rp-remove {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.78);
+  border: 1px solid rgba(255,255,255,0.18);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.7);
+  padding: 0;
+  transition: background 0.18s, color 0.18s;
+}
+
+.db-rp-remove svg { width: 8px; height: 8px; }
+.db-rp-remove:hover { background: rgba(231,76,60,0.88); color: #fff; }
 
 .db-rp-name {
   font-size: 0.66rem;
@@ -2055,31 +2081,35 @@
 .db-fc-item {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 6px;
+  align-items: flex-start;
+  gap: 5px;
   cursor: pointer;
   transition: opacity 0.18s;
-  text-align: center;
+  text-align: left;
 }
 
 .db-fc-item:hover { opacity: 0.78; }
 
 .db-fc-photo {
-  width: 100%;
-  aspect-ratio: 1;
-  border-radius: 50%;
+  width: 64px;
+  height: 86px;
+  border-radius: 8px;
   object-fit: cover;
+  object-position: top center;
+  display: block;
+  flex-shrink: 0;
 }
 
 .db-fc-photo--ph {
-  width: 100%;
-  aspect-ratio: 1;
-  border-radius: 50%;
+  width: 64px;
+  height: 86px;
+  border-radius: 8px;
   background: linear-gradient(135deg, var(--db-red3), var(--db-bg3));
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--db-text3);
+  flex-shrink: 0;
 }
 
 .db-fc-photo--ph svg { width: 20px; height: 20px; }
@@ -2094,6 +2124,7 @@
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  max-width: 64px;
 }
 
 /* ── Cast clickable + fav button ── */
@@ -2406,7 +2437,8 @@ button.db-section-more,
 .db-cast-toggle:hover svg,
 .db-np-close:hover svg,
 .db-st-clear-btn:hover svg,
-.db-section-more:hover svg             { color: var(--db-red); }
+.db-section-more:hover svg,
+.db-rp-remove:hover svg                { color: #fff; }
 .db-np-loop-btn:hover svg              { color: rgba(255,255,255,0.85); }
 
 /* Heart / fav active states */

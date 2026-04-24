@@ -1036,7 +1036,16 @@ export default function Dashboard() {
                 <div className="db-rp-grid">
                   {savedTracks.slice(0, 6).map(track => (
                     <div key={track.trackId} className="db-rp-item" onClick={() => openRecentTrack(track)}>
-                      <img src={track.artworkUrl100} alt={track.trackName} className="db-rp-art" />
+                      <div className="db-rp-art-wrap">
+                        <img src={track.artworkUrl100} alt={track.trackName} className="db-rp-art" />
+                        <button
+                          className="db-rp-remove"
+                          onClick={e => { e.stopPropagation(); toggleSaveTrack(track); }}
+                          title="Remove from saved"
+                        >
+                          <IcoX />
+                        </button>
+                      </div>
                       <p className="db-rp-name">{track.trackName}</p>
                       <p className="db-rp-artist">{track.artistName}</p>
                     </div>
@@ -1055,7 +1064,7 @@ export default function Dashboard() {
                   {favCast.map(actor => (
                     <div key={actor.id} className="db-fc-item" onClick={() => openActor(actor)}>
                       {actor.profile_path
-                        ? <img src={`${IMG_W200}${actor.profile_path}`} alt={actor.name} className="db-fc-photo" />
+                        ? <img src={`${IMG_W500}${actor.profile_path}`} alt={actor.name} className="db-fc-photo" />
                         : <div className="db-fc-photo db-fc-photo--ph"><IcoUser /></div>
                       }
                       <p className="db-fc-name">{actor.name}</p>
