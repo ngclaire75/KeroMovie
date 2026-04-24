@@ -1961,6 +1961,9 @@
   /* Right panel sections */
   .db-bm-list { max-height: none; }
   .db-cast-list { max-height: 320px; }
+
+  /* Prevent iOS Safari auto-zoom on input focus */
+  .db-st-search-input { font-size: 16px; }
 }
 
 /* ══════════════════════════════
