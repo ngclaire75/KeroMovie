@@ -103,6 +103,8 @@ export default function MovieGrid({ genre = 'Trending Now', searchQuery = '' }) 
   const [error, setError]             = useState(null);
   const [visible, setVisible]         = useState(false);
   const [selectedMovie, setSelectedMovie] = useState(null);
+  const [movieDetails, setMovieDetails]   = useState(null);
+  const [modalLoading, setModalLoading]   = useState(false);
   const cache = useRef({});
   const { addBookmark, removeBookmark, isBookmarked, preferredCountry } = useApp();
 
@@ -112,6 +114,18 @@ export default function MovieGrid({ genre = 'Trending Now', searchQuery = '' }) 
     window.addEventListener('keydown', close);
     return () => window.removeEventListener('keydown', close);
   }, [selectedMovie]);
+
+  useEffect(() => {
+    if (!selectedMovie) { setMovieDetails(null); return; }
+    const key = import.meta.env.VITE_TMDB_KEY;
+    if (!key) return;
+    setModalLoading(true);
+    setMovieDetails(null);
+    fetch(`https://api.themoviedb.org/3/movie/${selectedMovie.id}?api_key=${key}&language=en-US`)
+      .then(r => r.json())
+      .then(data => { setMovieDetails(data); setModalLoading(false); })
+      .catch(() => setModalLoading(false));
+  }, [selectedMovie?.id]);
 
   useEffect(() => {
     const key = import.meta.env.VITE_TMDB_KEY;
@@ -279,66 +293,90 @@ export default function MovieGrid({ genre = 'Trending Now', searchQuery = '' }) 
       </div>
 
       {/* ── Movie Detail Modal ── */}
-      {selectedMovie && (
-        <div className="mg-modal-overlay" onClick={() => setSelectedMovie(null)}>
-          {/* Blurred backdrop */}
-          {selectedMovie.Backdrop && (
-            <div
-              className="mg-modal-backdrop"
-              style={{ backgroundImage: `url(${selectedMovie.Backdrop})` }}
-            />
-          )}
-          <div className="mg-modal-grad" />
+      {selectedMovie && (() => {
+        const d = movieDetails;
+        const posterUrl  = d?.poster_path   ? `${TMDB_W500}${d.poster_path}`   : selectedMovie.PosterHD;
+        const backdropUrl= d?.backdrop_path ? `${TMDB_W780}${d.backdrop_path}` : selectedMovie.Backdrop;
+        const title      = d?.title         || selectedMovie.Title;
+        const year       = d?.release_date?.slice(0, 4) || selectedMovie.Year;
+        const rating     = d?.vote_average  ? d.vote_average.toFixed(1)        : selectedMovie.imdbRating;
+        const genres     = d?.genres?.map(g => g.name).join(', ')              || selectedMovie.Genre;
+        const overview   = d?.overview      || selectedMovie.Overview          || '';
+        const runtime    = d?.runtime;
+        const tagline    = d?.tagline;
 
-          <div className="mg-modal" onClick={e => e.stopPropagation()}>
-            <button className="mg-modal-close" onClick={() => setSelectedMovie(null)} title="Close">
-              <IcoX />
-            </button>
+        return (
+          <div className="mg-modal-overlay" onClick={() => setSelectedMovie(null)}>
+            {backdropUrl && (
+              <div className="mg-modal-backdrop" style={{ backgroundImage: `url(${backdropUrl})` }} />
+            )}
+            <div className="mg-modal-grad" />
 
-            {/* Poster */}
-            <div className="mg-modal-poster-side">
-              {selectedMovie.PosterHD
-                ? <img src={selectedMovie.PosterHD} alt={selectedMovie.Title} className="mg-modal-poster-img" />
-                : <div className="mg-modal-poster-ph">{selectedMovie.Title?.[0]}</div>
-              }
-            </div>
+            <div className="mg-modal" onClick={e => e.stopPropagation()}>
+              <button className="mg-modal-close" onClick={() => setSelectedMovie(null)} title="Close">
+                <IcoX />
+              </button>
 
-            {/* Content */}
-            <div className="mg-modal-content">
-              <div className="mg-modal-badges">
-                {selectedMovie.Year && selectedMovie.Year !== '—' && (
-                  <span className="mg-modal-badge mg-modal-badge--year">{selectedMovie.Year}</span>
-                )}
-                {selectedMovie.imdbRating && selectedMovie.imdbRating !== '—' && (
-                  <span className="mg-modal-badge mg-modal-badge--rating">
-                    <IcoStar /> {selectedMovie.imdbRating}/10
-                  </span>
-                )}
-                {selectedMovie.Genre && selectedMovie.Genre !== '—' && (
-                  <span className="mg-modal-badge mg-modal-badge--genre">{selectedMovie.Genre}</span>
-                )}
+              {/* Poster */}
+              <div className="mg-modal-poster-side">
+                {posterUrl
+                  ? <img src={posterUrl} alt={title} className="mg-modal-poster-img" />
+                  : <div className="mg-modal-poster-ph">{title?.[0]}</div>
+                }
               </div>
 
-              <h2 className="mg-modal-title">{selectedMovie.Title}</h2>
+              {/* Content */}
+              <div className="mg-modal-content">
+                {modalLoading ? (
+                  <div className="mg-modal-loading">
+                    <span className="mg-modal-spin" />
+                  </div>
+                ) : (
+                  <>
+                    <div className="mg-modal-badges">
+                      {year && year !== '—' && (
+                        <span className="mg-modal-badge mg-modal-badge--year">{year}</span>
+                      )}
+                      {rating && rating !== '—' && (
+                        <span className="mg-modal-badge mg-modal-badge--rating">
+                          <IcoStar /> {rating}/10
+                        </span>
+                      )}
+                      {runtime > 0 && (
+                        <span className="mg-modal-badge mg-modal-badge--year">
+                          {Math.floor(runtime / 60)}h {runtime % 60}m
+                        </span>
+                      )}
+                      {genres && genres !== '—' && genres.split(', ').map(g => (
+                        <span key={g} className="mg-modal-badge mg-modal-badge--genre">{g}</span>
+                      ))}
+                    </div>
 
-              <p className="mg-modal-overview">
-                {selectedMovie.Overview || 'No synopsis available for this title.'}
-              </p>
+                    <h2 className="mg-modal-title">{title}</h2>
 
-              <button
-                className={`mg-modal-bm-btn${isBookmarked(selectedMovie.id) ? ' mg-modal-bm-btn--active' : ''}`}
-                onClick={e => {
-                  e.stopPropagation();
-                  isBookmarked(selectedMovie.id) ? removeBookmark(selectedMovie.id) : addBookmark(selectedMovie.id);
-                }}
-              >
-                {isBookmarked(selectedMovie.id) ? <IcoBookmarkFill /> : <IcoBookmarkOut />}
-                {isBookmarked(selectedMovie.id) ? 'Bookmarked' : 'Bookmark'}
-              </button>
+                    {tagline && <p className="mg-modal-tagline">"{tagline}"</p>}
+
+                    <p className="mg-modal-overview">
+                      {overview || 'No synopsis available for this title.'}
+                    </p>
+
+                    <button
+                      className={`mg-modal-bm-btn${isBookmarked(selectedMovie.id) ? ' mg-modal-bm-btn--active' : ''}`}
+                      onClick={e => {
+                        e.stopPropagation();
+                        isBookmarked(selectedMovie.id) ? removeBookmark(selectedMovie.id) : addBookmark(selectedMovie.id);
+                      }}
+                    >
+                      {isBookmarked(selectedMovie.id) ? <IcoBookmarkFill /> : <IcoBookmarkOut />}
+                      {isBookmarked(selectedMovie.id) ? 'Bookmarked' : 'Bookmark'}
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </section>
   );
 }
