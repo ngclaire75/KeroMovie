@@ -1962,8 +1962,8 @@
   .db-bm-list { max-height: none; }
   .db-cast-list { max-height: 320px; }
 
-  /* Prevent iOS Safari auto-zoom on input focus; keep text readable but compact */
-  .db-st-search-input { font-size: 14px; }
+  /* Prevent iOS Safari auto-zoom on input focus (requires >= 16px) */
+  .db-st-search-input { font-size: 16px; }
 }
 
 /* ══════════════════════════════

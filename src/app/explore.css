@@ -710,6 +710,14 @@ a { text-decoration: none; color: inherit; }
   }
 }
 
+/* Prevent iOS Safari auto-zoom on all inputs/textareas/selects */
+@media (max-width: 768px) {
+  .comment-input,
+  .comment-name-input,
+  .search-bar input,
+  .movie-select { font-size: 16px; }
+}
+
 /* ═══════════════════════════════════════════════
    BROWSE DASHBOARD (3-panel layout)
    ═══════════════════════════════════════════════ */
