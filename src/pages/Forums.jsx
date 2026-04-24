@@ -67,9 +67,11 @@ export default function Forums() {
   const [comment,        setComment]        = useState('');
   const [submitting,     setSubmitting]     = useState(false);
   const [formError,      setFormError]      = useState('');
+  const [postSuccess,    setPostSuccess]    = useState(false);
 
   // Feed
   const [posts,       setPosts]       = useState([]);
+  const [feedLoading, setFeedLoading] = useState(true);
   const [feedError,   setFeedError]   = useState('');
   const [filterMovie, setFilterMovie] = useState(null);
   const [mobileNav,   setMobileNav]   = useState(false);
@@ -89,17 +91,18 @@ export default function Forums() {
     return unsub;
   }, []);
 
-  // Firestore real-time listener — starts once auth is ready; does NOT restart on user changes
+  // Firestore real-time listener — starts immediately on mount (reads are public)
   useEffect(() => {
-    if (!authReady) return;
     const q = query(collection(db, FORUMS_COL), orderBy('createdAt', 'desc'));
     const unsub = onSnapshot(
       q,
       snap => {
         setPosts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
         setFeedError('');
+        setFeedLoading(false);
       },
       err => {
+        setFeedLoading(false);
         if (err.code === 'permission-denied') {
           setFeedError('Permission denied — Firestore rules are blocking reads. Update rules in Firebase Console to: allow read: if true;');
         } else {
@@ -108,7 +111,7 @@ export default function Forums() {
       }
     );
     return unsub;
-  }, [authReady]);
+  }, []);
 
   // TMDB debounced search
   useEffect(() => {
@@ -178,6 +181,8 @@ export default function Forums() {
       setRating(0);
       setHoverRating(0);
       setComment('');
+      setPostSuccess(true);
+      setTimeout(() => setPostSuccess(false), 4000);
     } catch (err) {
       if (err.code === 'permission-denied') {
         setFormError('Permission denied — check your Firestore rules.');
@@ -198,8 +203,6 @@ export default function Forums() {
 
   const displayName = profile?.firstName || profile?.username || authUser?.email?.split('@')[0] || 'Guest';
   const initial     = displayName.charAt(0).toUpperCase();
-
-  if (!authReady) return null;
 
   return (
     <div className="fr-root">
@@ -252,14 +255,18 @@ export default function Forums() {
         <aside className="fr-compose">
           <h2 className="fr-compose-title">Write a Review</h2>
 
-          {!authUser ? (
+          {postSuccess && (
+            <div className="fr-post-success">Review posted successfully!</div>
+          )}
+
+          {!authUser && authReady ? (
             <div className="fr-guest-prompt">
               <p>Sign in to post a review.</p>
               <button className="fr-submit" onClick={() => navigate('/login')}>Sign In</button>
             </div>
           ) : null}
 
-          <form className="fr-form" onSubmit={handleSubmit} style={!authUser ? { display: 'none' } : {}}>
+          <form className="fr-form" onSubmit={handleSubmit} style={(!authUser || !authReady) ? { display: 'none' } : {}}>
 
             {/* Movie picker */}
             <div className="fr-label">Movie</div>
@@ -367,7 +374,11 @@ export default function Forums() {
             )}
           </div>
 
-          {feedError ? (
+          {feedLoading ? (
+            <div className="fr-empty">
+              <span className="fr-feed-spin" />
+            </div>
+          ) : feedError ? (
             <div className="fr-empty">
               <IcoForum />
               <p>{feedError}</p>

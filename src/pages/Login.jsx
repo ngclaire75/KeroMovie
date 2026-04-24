@@ -102,8 +102,7 @@ export default function Login() {
     setLoading(true);
     try {
       await signUp(form);
-      go('login');
-      setInfo('Account created! You can now log in.');
+      go('signup-success');
     } catch (err) {
       if (err.code === 'auth/email-already-in-use') {
         setError('An account with this email already exists. Try logging in instead.');
@@ -311,6 +310,21 @@ export default function Login() {
                   {error && <p className="lp-error">{error}</p>}
                   <button type="submit" className="lp-btn" disabled={loading}>{loading ? 'Looking up…' : 'Find My Username'}</button>
                 </form>
+              </>
+            )}
+
+            {/* ── Signup Success ── */}
+            {view === 'signup-success' && (
+              <>
+                <p className="lp-start">You're all set</p>
+                <h1 className="lp-heading">Account Created!</h1>
+                <p className="lp-body-msg">
+                  Your account has been created successfully.<br />
+                  Proceed to log in with your credentials.
+                </p>
+                <div className="lp-form" style={{ marginTop: '20px' }}>
+                  <button type="button" className="lp-btn" onClick={() => go('login')}>Proceed to Log In</button>
+                </div>
               </>
             )}
 

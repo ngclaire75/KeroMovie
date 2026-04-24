@@ -396,6 +396,35 @@
 .fr-textarea::placeholder { color: rgba(255,255,255,0.28); }
 .fr-textarea:focus { border-color: rgba(231,76,60,0.5); }
 
+/* Post success banner */
+.fr-post-success {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #6ee7a0;
+  padding: 10px 14px;
+  background: rgba(52, 211, 153, 0.1);
+  border: 1px solid rgba(52, 211, 153, 0.25);
+  border-radius: 8px;
+  margin-bottom: 14px;
+  text-align: center;
+}
+
+/* Feed loading spinner */
+@keyframes fr-spin {
+  to { transform: rotate(360deg); }
+}
+
+.fr-feed-spin {
+  display: block;
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(231,76,60,0.2);
+  border-top-color: #e74c3c;
+  border-radius: 50%;
+  animation: fr-spin 0.75s linear infinite;
+  margin: 0 auto;
+}
+
 /* Form error */
 .fr-form-error {
   font-size: 0.78rem;
