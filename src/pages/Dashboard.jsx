@@ -153,6 +153,7 @@ const IcoScan    = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentCol
 const IcoAlert   = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>;
 const IcoUser    = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
 const IcoFire    = () => <svg viewBox="0 0 24 24" fill="currentColor" style={{color:'#e74c3c'}}><path d="M12 2c0 0-5 4.5-5 9a5 5 0 0 0 10 0c0-2.5-1.5-5-1.5-5s-1 2-2.5 2S11 6 12 2z"/></svg>;
+const IcoMusic   = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>;
 const IcoPause   = () => <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>;
 const IcoImdb    = () => <svg viewBox="0 0 24 24" fill="currentColor" style={{color:'#f5c518'}}><rect x="2" y="6" width="20" height="12" rx="2"/><text x="4" y="15" fontSize="7" fontWeight="900" fill="#000">IMDb</text></svg>;
 
@@ -174,6 +175,11 @@ export default function Dashboard() {
   const [cast, setCast]                     = useState([]);
   const [mobileNavOpen, setMobileNavOpen]   = useState(false);
   const [castExpanded, setCastExpanded]     = useState(false);
+
+  // Soundtrack
+  const [soundtrack,  setSoundtrack]  = useState([]);
+  const [playingIdx,  setPlayingIdx]  = useState(null);
+  const audioRef = useRef(null);
 
   // Reading time
   const synopsisRef     = useRef(null);
@@ -299,6 +305,38 @@ export default function Dashboard() {
       .then(d => setCast(d.cast || []))
       .catch(() => {});
   }, [featured?.id]);
+
+  // Soundtrack — fetch from iTunes when featured movie changes
+  useEffect(() => {
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+    setPlayingIdx(null);
+    setSoundtrack([]);
+    if (!featured?.title) return;
+    fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(featured.title + ' soundtrack')}&media=music&entity=song&limit=8`)
+      .then(r => r.json())
+      .then(d => setSoundtrack((d.results || []).filter(t => t.previewUrl)))
+      .catch(() => setSoundtrack([]));
+  }, [featured?.id]);
+
+  // Stop audio on unmount
+  useEffect(() => () => { if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; } }, []);
+
+  function toggleTrack(idx) {
+    const track = soundtrack[idx];
+    if (!track?.previewUrl) return;
+    if (playingIdx === idx) {
+      audioRef.current?.pause();
+      audioRef.current = null;
+      setPlayingIdx(null);
+      return;
+    }
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+    const audio = new Audio(track.previewUrl);
+    audio.play().catch(() => {});
+    audio.onended = () => setPlayingIdx(null);
+    audioRef.current = audio;
+    setPlayingIdx(idx);
+  }
 
   // Bookmark movie details
   useEffect(() => {
@@ -789,6 +827,30 @@ export default function Dashboard() {
                     <IcoArrow />
                   </button>
                 )}
+              </div>
+            )}
+
+            {/* Soundtrack */}
+            {soundtrack.length > 0 && (
+              <div className="db-panel-block">
+                <div className="db-section-row">
+                  <span className="db-section-title"><IcoMusic /> Soundtrack</span>
+                  <span className="db-section-sub">{featured?.title}</span>
+                </div>
+                <div className="db-soundtrack-list">
+                  {soundtrack.map((track, idx) => (
+                    <div key={track.trackId} className={`db-soundtrack-item${playingIdx === idx ? ' db-soundtrack-item--playing' : ''}`}>
+                      <img src={track.artworkUrl100} alt={track.trackName} className="db-soundtrack-art" />
+                      <div className="db-soundtrack-info">
+                        <p className="db-soundtrack-name">{track.trackName}</p>
+                        <p className="db-soundtrack-artist">{track.artistName}</p>
+                      </div>
+                      <button className="db-soundtrack-btn" onClick={() => toggleTrack(idx)} title={playingIdx === idx ? 'Pause' : 'Play'}>
+                        {playingIdx === idx ? <IcoPause /> : <IcoPlay />}
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 

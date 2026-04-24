@@ -1,6 +1,10 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, OAuthProvider } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import {
+  getAuth, GoogleAuthProvider, OAuthProvider,
+  browserLocalPersistence, browserSessionPersistence, inMemoryPersistence,
+  setPersistence,
+} from 'firebase/auth';
+import { initializeFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
@@ -14,7 +18,18 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
-export const db   = getFirestore(app);
+
+// iOS Safari restricts IndexedDB/localStorage — fall back gracefully
+setPersistence(auth, browserLocalPersistence).catch(() =>
+  setPersistence(auth, browserSessionPersistence).catch(() =>
+    setPersistence(auth, inMemoryPersistence).catch(() => {})
+  )
+);
+
+// iOS Safari blocks WebSocket/gRPC — force long polling so Firestore works
+export const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+});
 
 export const googleProvider = new GoogleAuthProvider();
 export const appleProvider  = new OAuthProvider('apple.com');
