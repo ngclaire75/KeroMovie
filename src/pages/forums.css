@@ -711,7 +711,7 @@
     font-size: 13px;
     font-weight: 600;
     letter-spacing: 0.04em;
-    color: rgba(255,255,255,0.55);
+    color: #fff;
     background: none;
     border-radius: 999px;
     gap: 0;
@@ -727,17 +727,18 @@
     inset: 0;
     border-radius: 999px;
     background: linear-gradient(135deg, #dc2626, #7f1d1d);
-    opacity: 0;
-    transform: scale(0.7);
-    transition: opacity 0.45s ease, transform 0.45s ease;
+    opacity: 1;
+    transform: scale(1);
     z-index: -1;
   }
 
   .fr-nav-link svg { display: none; }
 
-  .fr-nav-link:hover { color: #fff; }
+  .fr-nav-link:hover,
+  .fr-nav-link:active { color: #fff; }
 
-  .fr-nav-link:hover::before {
+  .fr-nav-link:hover::before,
+  .fr-nav-link:active::before {
     opacity: 1;
     transform: scale(1);
     animation: fr-oval-bounce 0.55s ease forwards;

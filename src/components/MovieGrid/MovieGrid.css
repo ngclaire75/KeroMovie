@@ -538,13 +538,13 @@
 /* ── Responsive ── */
 @media (max-width: 640px) {
   .mg-modal-overlay {
-    padding: 16px;
-    align-items: center;
+    padding: 74px 16px 16px; /* 58px nav + 16px gap keeps panel clear of sticky nav */
+    align-items: flex-start;
   }
 
   .mg-modal {
     flex-direction: column;
-    max-height: 62vh;
+    max-height: calc(100vh - 90px);
     border-radius: 16px;
     overflow-y: auto;
     overflow-x: hidden;
