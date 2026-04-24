@@ -1063,10 +1063,19 @@ export default function Dashboard() {
                 <div className="db-fc-grid">
                   {favCast.map(actor => (
                     <div key={actor.id} className="db-fc-item" onClick={() => openActor(actor)}>
-                      {actor.profile_path
-                        ? <img src={`${IMG_W500}${actor.profile_path}`} alt={actor.name} className="db-fc-photo" />
-                        : <div className="db-fc-photo db-fc-photo--ph"><IcoUser /></div>
-                      }
+                      <div className="db-rp-art-wrap">
+                        {actor.profile_path
+                          ? <img src={`${IMG_W500}${actor.profile_path}`} alt={actor.name} className="db-fc-photo" />
+                          : <div className="db-fc-photo db-fc-photo--ph"><IcoUser /></div>
+                        }
+                        <button
+                          className="db-rp-remove"
+                          onClick={e => { e.stopPropagation(); toggleFavCast(actor); }}
+                          title="Remove from favourites"
+                        >
+                          <IcoX />
+                        </button>
+                      </div>
                       <p className="db-fc-name">{actor.name}</p>
                     </div>
                   ))}
