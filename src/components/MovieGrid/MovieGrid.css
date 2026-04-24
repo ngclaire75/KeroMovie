@@ -538,13 +538,13 @@
 /* ── Responsive ── */
 @media (max-width: 640px) {
   .mg-modal-overlay {
-    padding: 90px 16px 20px;
-    align-items: flex-start;
+    padding: 80px 16px 20px;
+    align-items: center;
   }
 
   .mg-modal {
     flex-direction: column;
-    max-height: calc(100dvh - 110px);
+    max-height: calc(100dvh - 100px);
     border-radius: 16px;
     overflow-y: auto;
     overflow-x: hidden;
