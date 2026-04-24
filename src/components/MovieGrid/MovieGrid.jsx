@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useApp } from '../../context/AppContext';
 import './MovieGrid.css';
 
@@ -292,8 +293,8 @@ export default function MovieGrid({ genre = 'Trending Now', searchQuery = '' }) 
         ))}
       </div>
 
-      {/* ── Movie Detail Modal ── */}
-      {selectedMovie && (() => {
+      {/* ── Movie Detail Modal (portal → escapes overflow:hidden on .home) ── */}
+      {selectedMovie && createPortal((() => {
         const d = movieDetails;
         const posterUrl  = d?.poster_path   ? `${TMDB_W500}${d.poster_path}`   : selectedMovie.PosterHD;
         const backdropUrl= d?.backdrop_path ? `${TMDB_W780}${d.backdrop_path}` : selectedMovie.Backdrop;
@@ -376,7 +377,7 @@ export default function MovieGrid({ genre = 'Trending Now', searchQuery = '' }) 
             </div>
           </div>
         );
-      })()}
+      })(), document.body)}
     </section>
   );
 }
