@@ -13,7 +13,20 @@ const IcoBookmarkOut = () => (
   </svg>
 );
 
-const TMDB_IMG = 'https://image.tmdb.org/t/p/w300';
+const TMDB_IMG    = 'https://image.tmdb.org/t/p/w300';
+const TMDB_W500   = 'https://image.tmdb.org/t/p/w500';
+const TMDB_W780   = 'https://image.tmdb.org/t/p/w780';
+
+const IcoX = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+  </svg>
+);
+const IcoStar = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12">
+    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+  </svg>
+);
 
 const GENRE_IDS = {
   'Trending Now': null,
@@ -58,7 +71,10 @@ function normalize(item) {
     Year:       item.release_date?.slice(0, 4) ?? '—',
     imdbRating: item.vote_average ? item.vote_average.toFixed(1) : '—',
     Poster:     item.poster_path ? `${TMDB_IMG}${item.poster_path}` : null,
+    PosterHD:   item.poster_path ? `${TMDB_W500}${item.poster_path}` : null,
+    Backdrop:   item.backdrop_path ? `${TMDB_W780}${item.backdrop_path}` : null,
     Genre:      (item.genre_ids ?? []).slice(0, 2).map(id => GENRE_NAMES[id]).filter(Boolean).join(', ') || '—',
+    Overview:   item.overview || '',
   };
 }
 
@@ -82,12 +98,20 @@ async function fetchPages(baseUrl, pageCount) {
 }
 
 export default function MovieGrid({ genre = 'Trending Now', searchQuery = '' }) {
-  const [movies, setMovies]   = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState(null);
-  const [visible, setVisible] = useState(false);
+  const [movies, setMovies]           = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [error, setError]             = useState(null);
+  const [visible, setVisible]         = useState(false);
+  const [selectedMovie, setSelectedMovie] = useState(null);
   const cache = useRef({});
   const { addBookmark, removeBookmark, isBookmarked, preferredCountry } = useApp();
+
+  useEffect(() => {
+    if (!selectedMovie) return;
+    const close = e => { if (e.key === 'Escape') setSelectedMovie(null); };
+    window.addEventListener('keydown', close);
+    return () => window.removeEventListener('keydown', close);
+  }, [selectedMovie]);
 
   useEffect(() => {
     const key = import.meta.env.VITE_TMDB_KEY;
@@ -205,6 +229,7 @@ export default function MovieGrid({ genre = 'Trending Now', searchQuery = '' }) 
             key={movie.id}
             className="mg-card"
             style={{ animationDelay: `${i * 0.04}s` }}
+            onClick={() => setSelectedMovie(movie)}
           >
             <div className="mg-poster">
               {movie.Poster
@@ -252,6 +277,68 @@ export default function MovieGrid({ genre = 'Trending Now', searchQuery = '' }) 
           </div>
         ))}
       </div>
+
+      {/* ── Movie Detail Modal ── */}
+      {selectedMovie && (
+        <div className="mg-modal-overlay" onClick={() => setSelectedMovie(null)}>
+          {/* Blurred backdrop */}
+          {selectedMovie.Backdrop && (
+            <div
+              className="mg-modal-backdrop"
+              style={{ backgroundImage: `url(${selectedMovie.Backdrop})` }}
+            />
+          )}
+          <div className="mg-modal-grad" />
+
+          <div className="mg-modal" onClick={e => e.stopPropagation()}>
+            <button className="mg-modal-close" onClick={() => setSelectedMovie(null)} title="Close">
+              <IcoX />
+            </button>
+
+            {/* Poster */}
+            <div className="mg-modal-poster-side">
+              {selectedMovie.PosterHD
+                ? <img src={selectedMovie.PosterHD} alt={selectedMovie.Title} className="mg-modal-poster-img" />
+                : <div className="mg-modal-poster-ph">{selectedMovie.Title?.[0]}</div>
+              }
+            </div>
+
+            {/* Content */}
+            <div className="mg-modal-content">
+              <div className="mg-modal-badges">
+                {selectedMovie.Year && selectedMovie.Year !== '—' && (
+                  <span className="mg-modal-badge mg-modal-badge--year">{selectedMovie.Year}</span>
+                )}
+                {selectedMovie.imdbRating && selectedMovie.imdbRating !== '—' && (
+                  <span className="mg-modal-badge mg-modal-badge--rating">
+                    <IcoStar /> {selectedMovie.imdbRating}/10
+                  </span>
+                )}
+                {selectedMovie.Genre && selectedMovie.Genre !== '—' && (
+                  <span className="mg-modal-badge mg-modal-badge--genre">{selectedMovie.Genre}</span>
+                )}
+              </div>
+
+              <h2 className="mg-modal-title">{selectedMovie.Title}</h2>
+
+              <p className="mg-modal-overview">
+                {selectedMovie.Overview || 'No synopsis available for this title.'}
+              </p>
+
+              <button
+                className={`mg-modal-bm-btn${isBookmarked(selectedMovie.id) ? ' mg-modal-bm-btn--active' : ''}`}
+                onClick={e => {
+                  e.stopPropagation();
+                  isBookmarked(selectedMovie.id) ? removeBookmark(selectedMovie.id) : addBookmark(selectedMovie.id);
+                }}
+              >
+                {isBookmarked(selectedMovie.id) ? <IcoBookmarkFill /> : <IcoBookmarkOut />}
+                {isBookmarked(selectedMovie.id) ? 'Bookmarked' : 'Bookmark'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
