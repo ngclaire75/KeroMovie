@@ -13,6 +13,7 @@ const TMDB_BASE = 'https://api.themoviedb.org/3';
 const IMG_W500  = 'https://image.tmdb.org/t/p/w500';
 const IMG_OG    = 'https://image.tmdb.org/t/p/original';
 const IMG_W200  = 'https://image.tmdb.org/t/p/w185';
+const IMG_W342  = 'https://image.tmdb.org/t/p/w342';
 
 const AWS_KEY    = import.meta.env.VITE_AWS_ACCESS_KEY_ID;
 const AWS_SECRET = import.meta.env.VITE_AWS_SECRET_ACCESS_KEY;
@@ -1506,7 +1507,7 @@ export default function Dashboard() {
                       <div className="db-actor-movies-grid">
                         {actorDetails.movies.map(m => (
                           <div key={m.id} className="db-actor-movie-item">
-                            <img src={`${IMG_W200}${m.poster_path}`} alt={m.title} className="db-actor-movie-poster" />
+                            <img src={`${IMG_W342}${m.poster_path}`} alt={m.title} className="db-actor-movie-poster" />
                             <p className="db-actor-movie-title">{m.title}</p>
                           </div>
                         ))}

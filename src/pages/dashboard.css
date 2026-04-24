@@ -2391,8 +2391,8 @@ button.db-section-more,
 
 .db-actor-movies-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
 }
 
 .db-actor-movie-item {
@@ -2469,11 +2469,11 @@ button.db-section-more,
   }
 
   .db-actor-name { font-size: 1.1rem; }
-  .db-actor-movies-grid { grid-template-columns: repeat(3, 1fr); }
+  .db-actor-movies-grid { grid-template-columns: repeat(4, 1fr); }
 }
 
 @media (max-width: 479px) {
-  .db-actor-movies-grid { grid-template-columns: repeat(2, 1fr); }
+  .db-actor-movies-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
 /* ══════════════════════════════
