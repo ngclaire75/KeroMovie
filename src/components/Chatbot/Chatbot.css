@@ -1,0 +1,446 @@
+/* ═══════════════════════════════════════════════
+   KEROBOT CHATBOT
+   ═══════════════════════════════════════════════ */
+
+/* ── Bubble hint ── */
+.kb-bubble-hint {
+  position: fixed;
+  bottom: 105px;
+  right: 24px;
+  z-index: 1201;
+  background: #fff;
+  color: #222;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.4;
+  padding: 8px 14px;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.18), 0 1px 4px rgba(0,0,0,0.1);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: kb-in 0.2s ease both;
+}
+
+.kb-bubble-hint::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  right: 18px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid #fff;
+}
+
+/* ── Floating action button ── */
+.kb-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1200;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.kb-fab:hover { transform: scale(1.08); }
+
+.kb-fab-img {
+  width: 88px;
+  height: 88px;
+  object-fit: contain;
+  display: block;
+  filter:
+    drop-shadow(0 0 2px #e74c3c)
+    drop-shadow(0 0 4px #e74c3c)
+    drop-shadow(0 0 7px #7f1d1d);
+}
+
+/* ── Panel ── */
+@keyframes kb-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.kb-panel {
+  position: fixed;
+  bottom: 90px;
+  right: 24px;
+  z-index: 1199;
+  width: 340px;
+  height: 500px;
+  background: #080000;
+  border: 1px solid rgba(231, 76, 60, 0.22);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.75),
+    0 0 0 1px rgba(231,76,60,0.08),
+    0 0 48px rgba(180, 0, 0, 0.1);
+  animation: kb-in 0.22s ease both;
+}
+
+.kb-panel--drag {
+  border-color: rgba(231,76,60,0.6);
+}
+
+/* ── Drag overlay ── */
+.kb-drag-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(231,76,60,0.1);
+  border: 2px dashed rgba(231,76,60,0.6);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(231,76,60,0.9);
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* ── Header ── */
+.kb-header {
+  flex-shrink: 0;
+  height: 64px;
+  padding: 0 16px;
+  background: linear-gradient(135deg, rgba(200,0,0,0.92) 0%, rgba(80,0,0,0.97) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  overflow: visible;
+  position: relative;
+  z-index: 2;
+}
+
+.kb-header-left {
+  display: flex;
+  align-items: center;
+  padding-left: 44px;
+}
+
+.kb-avatar {
+  position: absolute;
+  left: -10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 86px;
+  height: 86px;
+  object-fit: contain;
+}
+
+.kb-bot-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.kb-bot-sub {
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.6);
+  margin: 0;
+}
+
+.kb-header-close {
+  background: rgba(255,255,255,0.1);
+  border: none;
+  color: rgba(255,255,255,0.7);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+  flex-shrink: 0;
+}
+
+.kb-header-close:hover { background: rgba(255,255,255,0.2); color: #fff; }
+
+/* ── Messages ── */
+.kb-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scrollbar-width: none;
+}
+
+.kb-messages::-webkit-scrollbar { display: none; }
+
+/* ── Bubble rows ── */
+.kb-bubble-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 7px;
+}
+
+.kb-bubble-row--user    { flex-direction: row-reverse; }
+.kb-bubble-row--assistant { flex-direction: row; }
+
+.kb-bot-dot {
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+/* ── Bubbles ── */
+.kb-bubble {
+  max-width: 82%;
+  border-radius: 16px;
+  padding: 9px 13px;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  word-break: break-word;
+}
+
+.kb-bubble p { margin: 0; }
+
+.kb-bubble--user {
+  background: linear-gradient(135deg, rgba(220,38,38,0.85), rgba(127,29,29,0.9));
+  color: #fff;
+  border-radius: 16px 16px 4px 16px;
+}
+
+.kb-bubble--assistant {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.88);
+  border-radius: 16px 16px 16px 4px;
+}
+
+/* ── Attachment preview in messages ── */
+.kb-attach-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.kb-attach-thumb {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.kb-attach-file {
+  font-size: 0.7rem;
+  background: rgba(255,255,255,0.1);
+  border-radius: 4px;
+  padding: 3px 8px;
+  color: rgba(255,255,255,0.85);
+  word-break: break-all;
+}
+
+/* ── Typing indicator ── */
+.kb-bubble--typing {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 12px 16px;
+}
+
+@keyframes kb-bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+  40%            { transform: translateY(-5px); opacity: 1; }
+}
+
+.kb-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(231,76,60,0.8);
+  display: inline-block;
+  animation: kb-bounce 1.2s ease infinite;
+}
+
+.kb-dot:nth-child(2) { animation-delay: 0.18s; }
+.kb-dot:nth-child(3) { animation-delay: 0.36s; }
+
+/* ── Navigation button ── */
+.kb-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, rgba(220,38,38,0.7), rgba(127,29,29,0.8));
+  border: 1px solid rgba(231,76,60,0.5);
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s;
+  font-family: inherit;
+}
+
+.kb-nav-btn:hover {
+  background: linear-gradient(135deg, rgba(220,38,38,0.95), rgba(127,29,29,1));
+  border-color: #e74c3c;
+}
+
+/* ── Attachment chips (before send) ── */
+.kb-attachments-row {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 12px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  background: rgba(0,0,0,0.2);
+}
+
+.kb-attach-chip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  padding: 4px 6px 4px 4px;
+  max-width: 130px;
+}
+
+.kb-chip-thumb {
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
+  border-radius: 5px;
+  flex-shrink: 0;
+}
+
+.kb-chip-name {
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.8);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 75px;
+}
+
+.kb-chip-remove {
+  background: rgba(255,255,255,0.12);
+  border: none;
+  color: rgba(255,255,255,0.7);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+  transition: background 0.15s;
+}
+.kb-chip-remove:hover { background: rgba(231,76,60,0.5); color: #fff; }
+
+/* ── Input row ── */
+.kb-input-row {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  background: rgba(0,0,0,0.3);
+}
+
+.kb-input {
+  flex: 1;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 999px;
+  padding: 9px 14px;
+  font: inherit;
+  font-size: 0.82rem;
+  color: #fff;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.kb-input::placeholder { color: rgba(255,255,255,0.3); }
+.kb-input:focus { border-color: rgba(231,76,60,0.5); }
+
+/* ── Attach button ── */
+.kb-attach-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.55);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.18s, color 0.18s;
+}
+.kb-attach-btn:hover { background: rgba(255,255,255,0.13); color: #fff; }
+.kb-attach-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* ── Send button ── */
+.kb-send-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #e74c3c, #7f1d1d);
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: opacity 0.18s, transform 0.18s;
+}
+
+.kb-send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.kb-send-btn:not(:disabled):hover { transform: scale(1.08); }
+
+/* ── Mobile ── */
+@media (max-width: 480px) {
+  .kb-panel {
+    right: 12px;
+    bottom: 84px;
+    width: calc(100vw - 24px);
+    height: 460px;
+  }
+
+  .kb-fab {
+    right: 14px;
+    bottom: 16px;
+  }
+
+  .kb-fab-img {
+    width: 76px;
+    height: 76px;
+  }
+
+  .kb-bubble-hint {
+    right: 72px;
+    bottom: 82px;
+    font-size: 0.42rem;
+  }
+}

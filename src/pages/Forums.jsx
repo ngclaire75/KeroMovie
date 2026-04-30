@@ -165,7 +165,10 @@ export default function Forums() {
 
     setSubmitting(true);
     try {
-      await addDoc(collection(db, FORUMS_COL), {
+      // Force-refresh the auth token so Firestore security rules never see a stale credential
+      await auth.currentUser?.getIdToken(true);
+
+      const writePromise = addDoc(collection(db, FORUMS_COL), {
         movieId:     selectedMovie.id,
         movieTitle:  selectedMovie.title,
         moviePoster: selectedMovie.poster_path || '',
@@ -176,6 +179,11 @@ export default function Forums() {
         comment:     comment.trim(),
         createdAt:   serverTimestamp(),
       });
+      const timeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Request timed out — check your connection.')), 12000)
+      );
+      await Promise.race([writePromise, timeout]);
+
       setSelectedMovie(null);
       setMovieSearch('');
       setRating(0);
@@ -185,9 +193,11 @@ export default function Forums() {
       setTimeout(() => setPostSuccess(false), 4000);
     } catch (err) {
       if (err.code === 'permission-denied') {
-        setFormError('Permission denied — check your Firestore rules.');
+        setFormError('Not authorised — please sign out and sign back in, then try again.');
+      } else if (err.message?.includes('timed out')) {
+        setFormError(err.message);
       } else {
-        setFormError(err.message || 'Failed to post. Please try again.');
+        setFormError('Failed to post. Check your connection and try again.');
       }
     }
     setSubmitting(false);

@@ -14,6 +14,8 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api\/rekognition/, ''),
         },
+        '/api/chat': { target: 'http://localhost:8080', changeOrigin: true },
+        '/api/itunes': { target: 'http://localhost:8080', changeOrigin: true },
       },
     },
   };

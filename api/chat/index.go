@@ -1,4 +1,4 @@
-package main
+package handler
 
 import (
 	"bytes"
@@ -6,52 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"mime/multipart"
 	"net/http"
-	"net/url"
 	"os"
 	"strings"
 	"time"
 )
-
-// ── iTunes proxy ──────────────────────────────────────────────────────────────
-
-func itunesHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
-	if r.Method == "OPTIONS" {
-		w.WriteHeader(200)
-		return
-	}
-
-	term := r.URL.Query().Get("term")
-	if term == "" {
-		jsonError(w, 400, "term parameter required")
-		return
-	}
-	limit := r.URL.Query().Get("limit")
-	if limit == "" {
-		limit = "20"
-	}
-
-	apiURL := fmt.Sprintf(
-		"https://itunes.apple.com/search?term=%s&media=music&entity=song&limit=%s",
-		url.QueryEscape(term), limit,
-	)
-	resp, err := http.Get(apiURL)
-	if err != nil {
-		jsonError(w, 502, "failed to reach iTunes")
-		return
-	}
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(resp.StatusCode)
-	w.Write(body)
-}
-
-// ── Chat handler ──────────────────────────────────────────────────────────────
 
 const sysPrompt = `You are KeroBot, the friendly assistant for KeroMovie — a movie discovery and community platform. Keep replies concise and helpful.
 
@@ -129,9 +89,15 @@ type auddResult struct {
 	ReleaseDate string `json:"release_date"`
 }
 
-type auddApiResponse struct {
+type auddResponse struct {
 	Status string      `json:"status"`
 	Result *auddResult `json:"result"`
+}
+
+func writeJSON(w http.ResponseWriter, status int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(data)
 }
 
 func recognizeSong(b64Audio, apiToken string) string {
@@ -139,39 +105,48 @@ func recognizeSong(b64Audio, apiToken string) string {
 	if err != nil {
 		return "Could not decode the audio file."
 	}
+
 	var buf bytes.Buffer
 	mw := multipart.NewWriter(&buf)
 	mw.WriteField("api_token", apiToken)
 	mw.WriteField("return", "apple_music,spotify")
-	fw, _ := mw.CreateFormFile("file", "audio")
+	fw, err := mw.CreateFormFile("file", "audio")
+	if err != nil {
+		return "Internal error processing audio."
+	}
 	fw.Write(audioData)
 	mw.Close()
 
 	req, _ := http.NewRequest("POST", "https://api.audd.io/", &buf)
 	req.Header.Set("Content-Type", mw.FormDataContentType())
+
 	client := &http.Client{Timeout: 30 * time.Second}
 	res, err := client.Do(req)
 	if err != nil {
 		return "Could not reach the audio recognition service."
 	}
 	defer res.Body.Close()
+
 	body, _ := io.ReadAll(res.Body)
-	var ar auddApiResponse
+	var ar auddResponse
 	if json.Unmarshal(body, &ar) != nil || ar.Status != "success" || ar.Result == nil {
 		return "Could not identify the song. Please try a clearer audio clip."
 	}
+
 	year := "Unknown"
 	if len(ar.Result.ReleaseDate) >= 4 {
 		year = ar.Result.ReleaseDate[:4]
 	}
+
 	return fmt.Sprintf("Song identified!\n• Title: %s\n• Artist: %s\n• Album: %s\n• Year: %s",
 		ar.Result.Title, ar.Result.Artist, ar.Result.Album, year)
 }
 
-func chatHandler(w http.ResponseWriter, r *http.Request) {
+func Handler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
 	if r.Method == "OPTIONS" {
 		w.WriteHeader(200)
 		return
@@ -183,20 +158,21 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 
 	var req chatRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		jsonError(w, 400, "invalid request")
+		writeJSON(w, 400, map[string]string{"error": "invalid request"})
 		return
 	}
 	if strings.TrimSpace(req.Message) == "" && len(req.Attachments) == 0 {
-		jsonError(w, 400, "message or attachment required")
+		writeJSON(w, 400, map[string]string{"error": "message or attachment required"})
 		return
 	}
 
 	apiKey := os.Getenv("ANTHROPIC_API_KEY")
 	if apiKey == "" {
-		jsonError(w, 503, "chatbot not configured")
+		writeJSON(w, 503, map[string]string{"error": "chatbot not configured"})
 		return
 	}
 
+	// Build history messages
 	history := req.History
 	if len(history) > 8 {
 		history = history[len(history)-8:]
@@ -206,6 +182,7 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 		msgs = append(msgs, anthropicMsg{Role: h.Role, Content: h.Content})
 	}
 
+	// Process attachments
 	var audioResults []string
 	var contentBlocks []map[string]interface{}
 
@@ -220,18 +197,24 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 			contentBlocks = append(contentBlocks, map[string]interface{}{
 				"type": "image",
 				"source": map[string]string{
-					"type": "base64", "media_type": mediaType, "data": att.Base64,
+					"type":       "base64",
+					"media_type": mediaType,
+					"data":       att.Base64,
 				},
 			})
+
 		case strings.HasPrefix(att.Type, "audio/"):
 			auddKey := os.Getenv("AUDD_API_KEY")
 			if auddKey != "" {
-				audioResults = append(audioResults, fmt.Sprintf("%s\n%s", att.Name, recognizeSong(att.Base64, auddKey)))
+				result := recognizeSong(att.Base64, auddKey)
+				audioResults = append(audioResults, fmt.Sprintf("%s\n%s", att.Name, result))
 			} else {
 				audioResults = append(audioResults, fmt.Sprintf("%s\nAudio recognition is not available.", att.Name))
 			}
+
 		default:
-			if decoded, err := base64.StdEncoding.DecodeString(att.Base64); err == nil {
+			decoded, err := base64.StdEncoding.DecodeString(att.Base64)
+			if err == nil {
 				text := string(decoded)
 				if len(text) > 2000 {
 					text = text[:2000] + "...(truncated)"
@@ -244,12 +227,15 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// If only audio (no images/text attachments and no text message), return recognition directly
 	if len(audioResults) > 0 && len(contentBlocks) == 0 && strings.TrimSpace(req.Message) == "" {
+		resp := chatResponse{Reply: strings.Join(audioResults, "\n\n")}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(chatResponse{Reply: strings.Join(audioResults, "\n\n")})
+		json.NewEncoder(w).Encode(resp)
 		return
 	}
 
+	// Build the user content
 	userText := req.Message
 	if len(audioResults) > 0 {
 		if userText != "" {
@@ -260,8 +246,11 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 
 	if len(contentBlocks) > 0 {
 		if userText != "" {
-			contentBlocks = append(contentBlocks, map[string]interface{}{"type": "text", "text": userText})
-		} else {
+			contentBlocks = append(contentBlocks, map[string]interface{}{
+				"type": "text",
+				"text": userText,
+			})
+		} else if len(contentBlocks) > 0 {
 			contentBlocks = append(contentBlocks, map[string]interface{}{
 				"type": "text",
 				"text": "What do you see in this? Please describe it and relate it to KeroMovie if possible.",
@@ -273,8 +262,12 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	payload, _ := json.Marshal(anthropicRequest{
-		Model: "claude-haiku-4-5-20251001", MaxTokens: 512, System: sysPrompt, Messages: msgs,
+		Model:     "claude-haiku-4-5-20251001",
+		MaxTokens: 512,
+		System:    sysPrompt,
+		Messages:  msgs,
 	})
+
 	httpReq, _ := http.NewRequest("POST", "https://api.anthropic.com/v1/messages", bytes.NewReader(payload))
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("x-api-key", apiKey)
@@ -282,55 +275,35 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 
 	res, err := http.DefaultClient.Do(httpReq)
 	if err != nil {
-		jsonError(w, 502, "AI service unreachable")
+		writeJSON(w, 502, map[string]string{"error": "AI service unreachable"})
 		return
 	}
 	defer res.Body.Close()
+
 	body, _ := io.ReadAll(res.Body)
 	var ar anthropicResponse
 	if json.Unmarshal(body, &ar) != nil || len(ar.Content) == 0 {
-		jsonError(w, 502, "unexpected AI response")
+		writeJSON(w, 502, map[string]string{"error": "unexpected AI response"})
 		return
 	}
 
 	replyText := ar.Content[0].Text
 	resp := chatResponse{Reply: replyText}
+
 	lines := strings.Split(strings.TrimRight(replyText, "\n"), "\n")
 	for i := len(lines) - 1; i >= 0; i-- {
 		line := strings.TrimSpace(lines[i])
 		if strings.HasPrefix(line, "NAVIGATE:") {
+			jsonStr := strings.TrimPrefix(line, "NAVIGATE:")
 			var nav navHint
-			if json.Unmarshal([]byte(strings.TrimPrefix(line, "NAVIGATE:")), &nav) == nil {
+			if json.Unmarshal([]byte(jsonStr), &nav) == nil {
 				resp.Navigate = &nav
 				resp.Reply = strings.TrimSpace(strings.Join(lines[:i], "\n"))
 			}
 			break
 		}
 	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-func jsonError(w http.ResponseWriter, status int, msg string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	fmt.Fprintf(w, `{"error":%q}`, msg)
-}
-
-// ── Entry point ───────────────────────────────────────────────────────────────
-
-func main() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/api/status", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, `{"status":"ok"}`)
-	})
-	mux.HandleFunc("/api/itunes", itunesHandler)
-	mux.HandleFunc("/api/chat", chatHandler)
-
-	addr := ":8080"
-	log.Printf("Backend running on http://localhost%s", addr)
-	log.Fatal(http.ListenAndServe(addr, mux))
 }

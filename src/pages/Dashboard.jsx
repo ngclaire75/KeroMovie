@@ -357,7 +357,7 @@ export default function Dashboard() {
     setSoundtrack([]);
     if (!featured?.title) return;
     const term = encodeURIComponent(featured.title + ' original motion picture soundtrack');
-    fetch(`https://itunes.apple.com/search?term=${term}&media=music&entity=song&limit=20`)
+    fetch(`/api/itunes?term=${term}&limit=20`)
       .then(r => r.json())
       .then(d => {
         const KW = ['soundtrack', 'score', 'motion picture', 'original'];
@@ -377,7 +377,8 @@ export default function Dashboard() {
   function playTrackAudio(track, idx) {
     if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
     if (!track?.previewUrl) return;
-    const audio = new Audio(track.previewUrl);
+    const audio = new Audio();
+    audio.preload = 'auto';
     audio.loop = loopRef.current;
     audio.ontimeupdate = () => {
       if (!audio.duration) return;
@@ -394,9 +395,18 @@ export default function Dashboard() {
         setAudioCurSec(0);
       }
     };
-    audio.play().catch(() => {});
+    // Set src after attaching listeners so iOS picks up the user-gesture context
+    audio.src = track.previewUrl;
     audioRef.current = audio;
     setPlayingIdx(idx);
+    audio.load();
+    audio.play().catch(err => {
+      // NotAllowedError = browser blocked autoplay; user must tap again
+      if (err.name !== 'AbortError') {
+        audioRef.current = null;
+        setPlayingIdx(null);
+      }
+    });
   }
 
   function openTrack(idx) {
@@ -456,9 +466,7 @@ export default function Dashboard() {
     setStSearchResults([]);
     const term = encodeURIComponent(stSearch.trim() + ' original motion picture soundtrack');
     try {
-      const d = await fetch(
-        `https://itunes.apple.com/search?term=${term}&media=music&entity=song&limit=20`
-      ).then(r => r.json());
+      const d = await fetch(`/api/itunes?term=${term}&limit=20`).then(r => r.json());
       const KW = ['soundtrack', 'score', 'motion picture', 'original'];
       const tracks = (d.results || []).filter(t => {
         if (!t.previewUrl) return false;
