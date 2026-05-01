@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { collection, doc, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, doc, query, where, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { useApp } from '../context/AppContext';
 import ProfileModal from '../components/ProfileModal/ProfileModal';
@@ -277,15 +277,22 @@ export default function Dashboard() {
   }, []);
 
   // Real-time listener for this user's forum posts
+  // Note: no orderBy here to avoid needing a composite index; sort client-side
   useEffect(() => {
     if (!authUser) { setMyForumPosts([]); return; }
     const q = query(
       collection(db, 'forums_posts'),
-      where('userId', '==', authUser.uid),
-      orderBy('createdAt', 'desc')
+      where('userId', '==', authUser.uid)
     );
     const unsub = onSnapshot(q, snap => {
-      setMyForumPosts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      const posts = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => {
+          const ta = a.createdAt?.toMillis?.() ?? 0;
+          const tb = b.createdAt?.toMillis?.() ?? 0;
+          return tb - ta;
+        });
+      setMyForumPosts(posts);
     }, () => {});
     return unsub;
   }, [authUser?.uid]);

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  collection, addDoc, onSnapshot, query, orderBy,
+  collection, addDoc, onSnapshot, query,
   deleteDoc, doc, serverTimestamp,
 } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
@@ -91,13 +91,20 @@ export default function Forums() {
     return unsub;
   }, []);
 
-  // Firestore real-time listener — starts immediately on mount (reads are public)
+  // Firestore real-time listener — no orderBy to avoid composite index requirement; sort client-side
   useEffect(() => {
-    const q = query(collection(db, FORUMS_COL), orderBy('createdAt', 'desc'));
+    const q = query(collection(db, FORUMS_COL));
     const unsub = onSnapshot(
       q,
       snap => {
-        setPosts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        const sorted = snap.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .sort((a, b) => {
+            const ta = a.createdAt?.toMillis?.() ?? 0;
+            const tb = b.createdAt?.toMillis?.() ?? 0;
+            return tb - ta;
+          });
+        setPosts(sorted);
         setFeedError('');
         setFeedLoading(false);
       },

@@ -26,9 +26,9 @@ setPersistence(auth, browserLocalPersistence).catch(() =>
   )
 );
 
-// iOS Safari blocks WebSocket/gRPC — force long polling so Firestore works
+// Auto-detect best transport: WebSocket on desktop, long polling on iOS Safari
 export const db = initializeFirestore(app, {
-  experimentalForceLongPolling: true,
+  experimentalAutoDetectLongPolling: true,
 });
 
 export const googleProvider = new GoogleAuthProvider();
