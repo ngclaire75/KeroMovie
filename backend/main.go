@@ -356,12 +356,17 @@ func jsonError(w http.ResponseWriter, status int, msg string) {
 func main() {
 	loadDotEnv()
 	mux := http.NewServeMux()
-	mux.HandleFunc("/api/status", func(w http.ResponseWriter, r *http.Request) {
+	statusHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"status":"ok"}`)
-	})
+	}
+	// Register at both /api/* (local dev via Vite proxy) and /* (Vercel strips /api prefix)
+	mux.HandleFunc("/api/status", statusHandler)
+	mux.HandleFunc("/status", statusHandler)
 	mux.HandleFunc("/api/itunes", itunesHandler)
+	mux.HandleFunc("/itunes", itunesHandler)
 	mux.HandleFunc("/api/chat", chatHandler)
+	mux.HandleFunc("/chat", chatHandler)
 
 	port := os.Getenv("PORT")
 	if port == "" {
