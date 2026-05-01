@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { auth } from '../lib/firebase';
+import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { auth, db } from '../lib/firebase';
 import { getProfile } from '../lib/authHelpers';
 import { useApp } from '../context/AppContext';
 import ProfileModal from '../components/ProfileModal/ProfileModal';
@@ -170,12 +171,25 @@ const IcoHeart     = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentC
 const IcoHeartFill = () => <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>;
 
 // ── Main Dashboard ─────────────────────────────────────────────────────
+function formatDate(ts) {
+  if (!ts) return '';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  const now = new Date();
+  const diff = Math.floor((now - d) / 1000);
+  if (diff < 60)    return 'just now';
+  if (diff < 3600)  return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
 export default function Dashboard() {
   const navigate  = useNavigate();
-  const { bookmarks, removeBookmark, isBookmarked, addBookmark, comments, ratings, currentUser,
+  const { bookmarks, removeBookmark, isBookmarked, addBookmark, currentUser,
           preferredCountry, preferredGenres, profilePhoto } = useApp();
   const [profileOpen, setProfileOpen] = useState(false);
 
+  const [authUser, setAuthUser]             = useState(null);
+  const [myForumPosts, setMyForumPosts]     = useState([]);
   const [profile, setProfile]               = useState(null);
   const [allTrending, setAllTrending]       = useState([]);
   const [featuredIdx, setFeaturedIdx]       = useState(0);
@@ -245,6 +259,7 @@ export default function Dashboard() {
   // Auth
   useEffect(() => {
     const unsub = auth.onAuthStateChanged(async user => {
+      setAuthUser(user || null);
       if (!user) return;
       const p = await getProfile(user.uid);
       setProfile(p || {
@@ -254,6 +269,20 @@ export default function Dashboard() {
     });
     return unsub;
   }, []);
+
+  // Real-time listener for this user's forum posts
+  useEffect(() => {
+    if (!authUser) { setMyForumPosts([]); return; }
+    const q = query(
+      collection(db, 'forums_posts'),
+      where('userId', '==', authUser.uid),
+      orderBy('createdAt', 'desc')
+    );
+    const unsub = onSnapshot(q, snap => {
+      setMyForumPosts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, () => {});
+    return unsub;
+  }, [authUser?.uid]);
 
   // Fetch movies — when a preferred country is set, filter by origin country
   useEffect(() => {
@@ -630,17 +659,6 @@ export default function Dashboard() {
   const synopsisWords = featured?.overview?.trim().split(/\s+/).length || 0;
   const estReadSec    = Math.max(5, Math.ceil((synopsisWords / 200) * 60));
 
-  // User activity from AppContext
-  const myComments = Object.entries(comments)
-    .flatMap(([movieId, cmts]) =>
-      cmts.filter(c => c.user === currentUser).map(c => ({ ...c, movieId: Number(movieId) }))
-    )
-    .sort((a, b) => b.id - a.id)
-    .slice(0, 6);
-
-  const myRatings = Object.entries(ratings)
-    .map(([movieId, r]) => ({ ...r, movieId: Number(movieId) }))
-    .slice(0, 4);
 
   // Camera helpers
   async function startCamera() {
@@ -1335,35 +1353,39 @@ export default function Dashboard() {
               );
             })()}
 
-            {/* Recent Activity (Comments + Ratings) */}
+            {/* Recent Activity — sourced from Firestore forums_posts */}
             <div className="db-panel-block">
               <div className="db-section-row">
                 <span className="db-section-title">Your Activity</span>
+                {myForumPosts.length > 0 && (
+                  <Link to="/forums" className="db-section-link">View all</Link>
+                )}
               </div>
-              {myComments.length === 0 && myRatings.length === 0 ? (
+              {myForumPosts.length === 0 ? (
                 <div className="db-empty">
                   <IcoForum />
                   <p>No activity yet. Comment or rate movies from the Forums page.</p>
                 </div>
               ) : (
                 <div className="db-activity-list">
-                  {myRatings.map((r, i) => (
-                    <div key={`r-${i}`} className="db-activity-item">
-                      <div className="db-activity-icon db-activity-icon--rating"><IcoStar /></div>
+                  {myForumPosts.slice(0, 6).map(post => (
+                    <div key={post.id} className="db-activity-item">
+                      {post.moviePoster ? (
+                        <img
+                          src={`https://image.tmdb.org/t/p/w92${post.moviePoster}`}
+                          alt={post.movieTitle}
+                          className="db-activity-poster"
+                        />
+                      ) : (
+                        <div className="db-activity-icon db-activity-icon--comment"><IcoForum /></div>
+                      )}
                       <div className="db-activity-body">
-                        <p className="db-activity-title">{r.movieTitle || 'Movie'}</p>
-                        <p className="db-activity-sub">Rated <strong>{r.score}/10</strong> · {r.date}</p>
-                      </div>
-                    </div>
-                  ))}
-                  {myComments.map(c => (
-                    <div key={c.id} className="db-activity-item">
-                      <div className="db-activity-icon db-activity-icon--comment"><IcoForum /></div>
-                      <div className="db-activity-body">
-                        <p className="db-activity-title">
-                          {c.text.length > 55 ? c.text.slice(0, 55) + '…' : c.text}
+                        <p className="db-activity-title">{post.movieTitle}</p>
+                        <p className="db-activity-sub">
+                          {post.rating != null && <><strong>{post.rating}/10</strong> · </>}
+                          {post.comment.length > 50 ? post.comment.slice(0, 50) + '…' : post.comment}
                         </p>
-                        <p className="db-activity-sub">{c.date}</p>
+                        <p className="db-activity-date">{formatDate(post.createdAt)}</p>
                       </div>
                     </div>
                   ))}
