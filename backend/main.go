@@ -15,6 +15,32 @@ import (
 	"time"
 )
 
+// loadDotEnv reads ../.env (project root) and sets missing environment variables.
+func loadDotEnv() {
+	data, err := os.ReadFile("../.env")
+	if err != nil {
+		data, err = os.ReadFile(".env")
+		if err != nil {
+			return
+		}
+	}
+	for _, line := range strings.Split(string(data), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		key := strings.TrimSpace(parts[0])
+		val := strings.TrimSpace(parts[1])
+		if os.Getenv(key) == "" {
+			os.Setenv(key, val)
+		}
+	}
+}
+
 // ── iTunes proxy ──────────────────────────────────────────────────────────────
 
 func itunesHandler(w http.ResponseWriter, r *http.Request) {
@@ -104,22 +130,59 @@ type chatResponse struct {
 	Navigate *navHint `json:"navigate,omitempty"`
 }
 
-type anthropicMsg struct {
+const modelVision = "meta-llama/llama-4-scout-17b-16e-instruct"
+
+func groqEndpoint() string {
+	base := os.Getenv("GROQ_BASE_URL")
+	if base == "" {
+		base = "https://api.groq.com/openai/v1"
+	}
+	return base + "/chat/completions"
+}
+
+func groqTextModel() string {
+	if m := os.Getenv("GROQ_MODEL"); m != "" {
+		return m
+	}
+	return "llama-3.1-8b-instant"
+}
+
+type groqMsg struct {
 	Role    string      `json:"role"`
-	Content interface{} `json:"content"`
+	Content any `json:"content"`
 }
 
-type anthropicRequest struct {
-	Model     string         `json:"model"`
-	MaxTokens int            `json:"max_tokens"`
-	System    string         `json:"system"`
-	Messages  []anthropicMsg `json:"messages"`
+type groqRequest struct {
+	Model       string    `json:"model"`
+	Messages    []groqMsg `json:"messages"`
+	MaxTokens   int       `json:"max_tokens"`
+	Temperature float64   `json:"temperature"`
 }
 
-type anthropicResponse struct {
-	Content []struct {
-		Text string `json:"text"`
-	} `json:"content"`
+type groqResponse struct {
+	Choices []struct {
+		Message struct {
+			Content string `json:"content"`
+		} `json:"message"`
+	} `json:"choices"`
+}
+
+func callGroq(apiKey, model string, msgs []groqMsg) (string, error) {
+	payload, _ := json.Marshal(groqRequest{Model: model, Messages: msgs, MaxTokens: 512, Temperature: 0.5})
+	req, _ := http.NewRequest("POST", groqEndpoint(), bytes.NewReader(payload))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer res.Body.Close()
+	body, _ := io.ReadAll(res.Body)
+	var gr groqResponse
+	if json.Unmarshal(body, &gr) != nil || len(gr.Choices) == 0 {
+		return "", fmt.Errorf("unexpected response")
+	}
+	return gr.Choices[0].Message.Content, nil
 }
 
 type auddResult struct {
@@ -191,7 +254,7 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	apiKey := os.Getenv("ANTHROPIC_API_KEY")
+	apiKey := os.Getenv("GROQ_API_KEY")
 	if apiKey == "" {
 		jsonError(w, 503, "chatbot not configured")
 		return
@@ -201,26 +264,23 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 	if len(history) > 8 {
 		history = history[len(history)-8:]
 	}
-	var msgs []anthropicMsg
+	msgs := []groqMsg{{Role: "system", Content: sysPrompt}}
 	for _, h := range history {
-		msgs = append(msgs, anthropicMsg{Role: h.Role, Content: h.Content})
+		msgs = append(msgs, groqMsg{Role: h.Role, Content: h.Content})
 	}
 
 	var audioResults []string
-	var contentBlocks []map[string]interface{}
+	var imageBlocks []map[string]any
+	hasImages := false
 
 	for _, att := range req.Attachments {
 		switch {
 		case strings.HasPrefix(att.Type, "image/"):
-			mediaType := att.Type
-			allowed := map[string]bool{"image/jpeg": true, "image/png": true, "image/gif": true, "image/webp": true}
-			if !allowed[mediaType] {
-				mediaType = "image/jpeg"
-			}
-			contentBlocks = append(contentBlocks, map[string]interface{}{
-				"type": "image",
-				"source": map[string]string{
-					"type": "base64", "media_type": mediaType, "data": att.Base64,
+			hasImages = true
+			imageBlocks = append(imageBlocks, map[string]any{
+				"type": "image_url",
+				"image_url": map[string]string{
+					"url": "data:" + att.Type + ";base64," + att.Base64,
 				},
 			})
 		case strings.HasPrefix(att.Type, "audio/"):
@@ -236,15 +296,12 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 				if len(text) > 2000 {
 					text = text[:2000] + "...(truncated)"
 				}
-				contentBlocks = append(contentBlocks, map[string]interface{}{
-					"type": "text",
-					"text": fmt.Sprintf("[Attached file: %s]\n%s", att.Name, text),
-				})
+				req.Message += fmt.Sprintf("\n\n[Attached file: %s]\n%s", att.Name, text)
 			}
 		}
 	}
 
-	if len(audioResults) > 0 && len(contentBlocks) == 0 && strings.TrimSpace(req.Message) == "" {
+	if len(audioResults) > 0 && !hasImages && strings.TrimSpace(req.Message) == "" {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(chatResponse{Reply: strings.Join(audioResults, "\n\n")})
 		return
@@ -252,48 +309,23 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 
 	userText := req.Message
 	if len(audioResults) > 0 {
-		if userText != "" {
-			userText += "\n\n"
-		}
-		userText += "Audio recognition results:\n" + strings.Join(audioResults, "\n\n")
+		userText += "\n\nAudio recognition results:\n" + strings.Join(audioResults, "\n\n")
 	}
 
-	if len(contentBlocks) > 0 {
-		if userText != "" {
-			contentBlocks = append(contentBlocks, map[string]interface{}{"type": "text", "text": userText})
-		} else {
-			contentBlocks = append(contentBlocks, map[string]interface{}{
-				"type": "text",
-				"text": "What do you see in this? Please describe it and relate it to KeroMovie if possible.",
-			})
-		}
-		msgs = append(msgs, anthropicMsg{Role: "user", Content: contentBlocks})
+	model := groqTextModel()
+	if hasImages {
+		model = modelVision
+		content := append(imageBlocks, map[string]any{"type": "text", "text": userText})
+		msgs = append(msgs, groqMsg{Role: "user", Content: content})
 	} else {
-		msgs = append(msgs, anthropicMsg{Role: "user", Content: userText})
+		msgs = append(msgs, groqMsg{Role: "user", Content: userText})
 	}
 
-	payload, _ := json.Marshal(anthropicRequest{
-		Model: "claude-haiku-4-5-20251001", MaxTokens: 512, System: sysPrompt, Messages: msgs,
-	})
-	httpReq, _ := http.NewRequest("POST", "https://api.anthropic.com/v1/messages", bytes.NewReader(payload))
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("x-api-key", apiKey)
-	httpReq.Header.Set("anthropic-version", "2023-06-01")
-
-	res, err := http.DefaultClient.Do(httpReq)
+	replyText, err := callGroq(apiKey, model, msgs)
 	if err != nil {
 		jsonError(w, 502, "AI service unreachable")
 		return
 	}
-	defer res.Body.Close()
-	body, _ := io.ReadAll(res.Body)
-	var ar anthropicResponse
-	if json.Unmarshal(body, &ar) != nil || len(ar.Content) == 0 {
-		jsonError(w, 502, "unexpected AI response")
-		return
-	}
-
-	replyText := ar.Content[0].Text
 	resp := chatResponse{Reply: replyText}
 	lines := strings.Split(strings.TrimRight(replyText, "\n"), "\n")
 	for i := len(lines) - 1; i >= 0; i-- {
@@ -322,6 +354,7 @@ func jsonError(w http.ResponseWriter, status int, msg string) {
 // ── Entry point ───────────────────────────────────────────────────────────────
 
 func main() {
+	loadDotEnv()
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/status", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
