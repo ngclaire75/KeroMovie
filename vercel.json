@@ -1,4 +1,8 @@
 {
+  "functions": {
+    "api/chat.go": { "runtime": "vercel-go@3.0.3" },
+    "api/itunes.go": { "runtime": "vercel-go@3.0.3" }
+  },
   "routes": [
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
