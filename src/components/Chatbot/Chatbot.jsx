@@ -62,27 +62,17 @@ export default function Chatbot({ onHome = false }) {
 
   const bubbleTimer = useRef(null);
 
-  // On mobile: show bubble immediately on page load for 20s
-  useEffect(() => {
-    const isMobile = window.matchMedia('(max-width: 480px)').matches;
-    if (isMobile && !open) {
-      setShowBubble(true);
-      bubbleTimer.current = setTimeout(() => setShowBubble(false), 20000);
-    }
-    return () => clearTimeout(bubbleTimer.current);
-  }, []);
+  useEffect(() => () => clearTimeout(bubbleTimer.current), []);
 
   function showHint() {
-    if (open) return;
+    if (open || window.matchMedia('(max-width: 480px)').matches) return;
     setShowBubble(true);
   }
   function hideHint() {
     setShowBubble(false);
     clearTimeout(bubbleTimer.current);
   }
-  function touchHint() {
-    // no-op on mobile — bubble is shown automatically on page load only
-  }
+  function touchHint() {}
 
   useEffect(() => {
     if (open) {

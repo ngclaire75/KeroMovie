@@ -8,8 +8,8 @@
   bottom: 132px;
   right: 24px;
   z-index: 1201;
-  background: #fff;
-  color: #222;
+  background: #f5ead8;
+  color: #7f1d1d;
   font-family: inherit;
   font-size: 0.88rem;
   font-weight: 600;
@@ -31,7 +31,7 @@
   height: 0;
   border-left: 9px solid transparent;
   border-right: 9px solid transparent;
-  border-top: 9px solid #fff;
+  border-top: 9px solid #f5ead8;
 }
 
 /* ── Floating action button ── */
@@ -443,6 +443,12 @@
   .kb-fab-img {
     width: 58px;
     height: 58px;
+  }
+
+  .kb-avatar {
+    width: 100px;
+    height: 100px;
+    left: -18px;
   }
 
   .kb-bubble-hint {

@@ -1045,7 +1045,7 @@ export default function Dashboard() {
                 <div className="db-rp-grid">
                   {recentTracks.slice(0, 6).map(track => (
                     <div key={track.trackId} className="db-rp-item" onClick={() => openRecentTrack(track)}>
-                      <img src={track.artworkUrl100} alt={track.trackName} className="db-rp-art" />
+                      <img src={(track.artworkUrl100 || '').replace(/\d+x\d+bb/, '600x600bb')} alt={track.trackName} className="db-rp-art" />
                       <p className="db-rp-name">{track.trackName}</p>
                       <p className="db-rp-artist">{track.artistName}</p>
                     </div>
@@ -1064,7 +1064,7 @@ export default function Dashboard() {
                   {savedTracks.slice(0, 6).map(track => (
                     <div key={track.trackId} className="db-rp-item" onClick={() => openRecentTrack(track)}>
                       <div className="db-rp-art-wrap">
-                        <img src={track.artworkUrl100} alt={track.trackName} className="db-rp-art" />
+                        <img src={(track.artworkUrl100 || '').replace(/\d+x\d+bb/, '600x600bb')} alt={track.trackName} className="db-rp-art" />
                         <button
                           className="db-rp-remove"
                           onClick={e => { e.stopPropagation(); toggleSaveTrack(track); }}
