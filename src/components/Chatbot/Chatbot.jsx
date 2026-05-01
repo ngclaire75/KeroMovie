@@ -64,6 +64,13 @@ export default function Chatbot({ onHome = false }) {
 
   useEffect(() => () => clearTimeout(bubbleTimer.current), []);
 
+  // Auto-show bubble on mobile on every page visit
+  useEffect(() => {
+    if (window.matchMedia('(max-width: 480px)').matches) {
+      bubbleTimer.current = setTimeout(() => setShowBubble(true), 600);
+    }
+  }, []);
+
   function showHint() {
     if (open || window.matchMedia('(max-width: 480px)').matches) return;
     setShowBubble(true);

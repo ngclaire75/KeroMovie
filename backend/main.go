@@ -367,7 +367,7 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, `{"status":"ok"}`)
 	}
-	// Register at both /api/* (local dev via Vite proxy) and /* (Vercel strips /api prefix)
+
 	mux.HandleFunc("/api/status", statusHandler)
 	mux.HandleFunc("/status", statusHandler)
 	mux.HandleFunc("/api/itunes", itunesHandler)

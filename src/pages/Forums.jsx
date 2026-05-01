@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  collection, addDoc, onSnapshot, query,
+  collection, addDoc, getDocs, query,
   deleteDoc, doc, serverTimestamp,
 } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
@@ -91,34 +91,27 @@ export default function Forums() {
     return unsub;
   }, []);
 
-  // Firestore real-time listener — no orderBy to avoid composite index requirement; sort client-side
-  useEffect(() => {
-    const q = query(collection(db, FORUMS_COL));
-    const unsub = onSnapshot(
-      q,
-      snap => {
-        const sorted = snap.docs
-          .map(d => ({ id: d.id, ...d.data() }))
-          .sort((a, b) => {
-            const ta = a.createdAt?.toMillis?.() ?? 0;
-            const tb = b.createdAt?.toMillis?.() ?? 0;
-            return tb - ta;
-          });
-        setPosts(sorted);
-        setFeedError('');
-        setFeedLoading(false);
-      },
-      err => {
-        setFeedLoading(false);
-        if (err.code === 'permission-denied') {
-          setFeedError('Permission denied — Firestore rules are blocking reads. Update rules in Firebase Console to: allow read: if true;');
-        } else {
-          setFeedError(`Could not load reviews (${err.code || err.message}). Please refresh.`);
-        }
+  // Load posts via getDocs (plain HTTP — works reliably in all environments)
+  async function fetchPosts() {
+    try {
+      const snap = await getDocs(query(collection(db, FORUMS_COL)));
+      const sorted = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0));
+      setPosts(sorted);
+      setFeedError('');
+    } catch (err) {
+      if (err.code === 'permission-denied') {
+        setFeedError('Permission denied — Firestore rules are blocking reads.');
+      } else {
+        setFeedError(`Could not load reviews (${err.code || err.message}). Please refresh.`);
       }
-    );
-    return unsub;
-  }, []);
+    } finally {
+      setFeedLoading(false);
+    }
+  }
+
+  useEffect(() => { fetchPosts(); }, []);
 
   // TMDB debounced search
   useEffect(() => {
@@ -198,6 +191,7 @@ export default function Forums() {
       setComment('');
       setPostSuccess(true);
       setTimeout(() => setPostSuccess(false), 4000);
+      fetchPosts();
     } catch (err) {
       if (err.code === 'permission-denied') {
         setFormError('Not authorised — please sign out and sign back in, then try again.');
@@ -211,7 +205,7 @@ export default function Forums() {
   }
 
   async function handleDelete(postId) {
-    try { await deleteDoc(doc(db, FORUMS_COL, postId)); } catch {}
+    try { await deleteDoc(doc(db, FORUMS_COL, postId)); fetchPosts(); } catch {}
   }
 
   const displayPosts = filterMovie

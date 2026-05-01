@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { collection, doc, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, doc, query, where, onSnapshot, getDocs } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
+import { getProfile } from '../lib/authHelpers';
 import { useApp } from '../context/AppContext';
 import ProfileModal from '../components/ProfileModal/ProfileModal';
 import logo from '../../images/keromovielogo.png';
@@ -255,46 +256,40 @@ export default function Dashboard() {
   const greeting     = getGreeting();
   const displayName  = profile?.firstName || profile?.username || currentUser || 'User';
 
-  // Auth + real-time profile listener
+  // Auth: load profile via getDoc (reliable HTTP) + onSnapshot for live updates
   useEffect(() => {
     let profileUnsub = null;
-    const authUnsub = auth.onAuthStateChanged(user => {
+    const authUnsub = auth.onAuthStateChanged(async user => {
       setAuthUser(user || null);
       if (profileUnsub) { profileUnsub(); profileUnsub = null; }
       if (!user) { setProfile(null); return; }
+
+      // Guaranteed one-time read — works even if WebSocket/long-poll fails
+      const p = await getProfile(user.uid);
+      setProfile(p || {
+        firstName: user.displayName?.split(' ')[0] || 'User',
+        username:  user.email?.split('@')[0] || 'user',
+      });
+
+      // Real-time updater (bonus: keeps name in sync if another session updates it)
       profileUnsub = onSnapshot(doc(db, 'users', user.uid), snap => {
-        if (snap.exists()) {
-          setProfile(snap.data());
-        } else {
-          setProfile({
-            firstName: user.displayName?.split(' ')[0] || 'User',
-            username:  user.email?.split('@')[0] || 'user',
-          });
-        }
+        if (snap.exists()) setProfile(snap.data());
       }, () => {});
     });
     return () => { authUnsub(); if (profileUnsub) profileUnsub(); };
   }, []);
 
-  // Real-time listener for this user's forum posts
-  // Note: no orderBy here to avoid needing a composite index; sort client-side
+  // Load this user's forum posts via getDocs (plain HTTP — no composite index needed)
   useEffect(() => {
     if (!authUser) { setMyForumPosts([]); return; }
-    const q = query(
-      collection(db, 'forums_posts'),
-      where('userId', '==', authUser.uid)
-    );
-    const unsub = onSnapshot(q, snap => {
-      const posts = snap.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .sort((a, b) => {
-          const ta = a.createdAt?.toMillis?.() ?? 0;
-          const tb = b.createdAt?.toMillis?.() ?? 0;
-          return tb - ta;
-        });
-      setMyForumPosts(posts);
-    }, () => {});
-    return unsub;
+    getDocs(query(collection(db, 'forums_posts'), where('userId', '==', authUser.uid)))
+      .then(snap => {
+        const posts = snap.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0));
+        setMyForumPosts(posts);
+      })
+      .catch(() => {});
   }, [authUser?.uid]);
 
   // Fetch movies — when a preferred country is set, filter by origin country
