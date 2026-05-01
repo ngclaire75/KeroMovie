@@ -11,7 +11,7 @@ import {
   EmailAuthProvider,
 } from 'firebase/auth';
 import {
-  doc, setDoc, getDoc, updateDoc,
+  doc, setDoc, getDoc, updateDoc, collection, query, where, getDocs,
 } from 'firebase/firestore';
 import { auth, db, googleProvider, appleProvider } from './firebase';
 

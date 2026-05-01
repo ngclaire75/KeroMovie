@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, doc, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
-import { getProfile } from '../lib/authHelpers';
 import { useApp } from '../context/AppContext';
 import ProfileModal from '../components/ProfileModal/ProfileModal';
 import logo from '../../images/keromovielogo.png';
@@ -254,20 +253,27 @@ export default function Dashboard() {
   const fileInputRef = useRef(null);
 
   const greeting     = getGreeting();
-  const displayName  = profile?.firstName || currentUser || 'User';
+  const displayName  = profile?.firstName || profile?.username || currentUser || 'User';
 
-  // Auth
+  // Auth + real-time profile listener
   useEffect(() => {
-    const unsub = auth.onAuthStateChanged(async user => {
+    let profileUnsub = null;
+    const authUnsub = auth.onAuthStateChanged(user => {
       setAuthUser(user || null);
-      if (!user) return;
-      const p = await getProfile(user.uid);
-      setProfile(p || {
-        firstName: user.displayName?.split(' ')[0] || 'User',
-        username:  user.email?.split('@')[0] || 'user',
-      });
+      if (profileUnsub) { profileUnsub(); profileUnsub = null; }
+      if (!user) { setProfile(null); return; }
+      profileUnsub = onSnapshot(doc(db, 'users', user.uid), snap => {
+        if (snap.exists()) {
+          setProfile(snap.data());
+        } else {
+          setProfile({
+            firstName: user.displayName?.split(' ')[0] || 'User',
+            username:  user.email?.split('@')[0] || 'user',
+          });
+        }
+      }, () => {});
     });
-    return unsub;
+    return () => { authUnsub(); if (profileUnsub) profileUnsub(); };
   }, []);
 
   // Real-time listener for this user's forum posts
