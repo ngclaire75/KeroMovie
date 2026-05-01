@@ -12,7 +12,8 @@ import Chatbot from '../components/Chatbot/Chatbot';
 
 function ChatbotRoute() {
   const { pathname } = useLocation();
-  return pathname === '/' ? null : <Chatbot />;
+  if (pathname !== '/') return null;
+  return <Chatbot onHome />;
 }
 
 export default function App() {

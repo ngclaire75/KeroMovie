@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import logo from '../../images/keromovielogo.png';
 import './login.css';
 import './privacyNotice.css';
 
@@ -18,12 +17,6 @@ export default function PrivacyNotice() {
     <>
       <div className="pn-page">
         <nav className="lp-nav">
-          <Link to="/" className="lp-logo">
-            <img src={logo} alt="KeroMovie" className="lp-logo-img" />
-            <span className="lp-logo-text">
-              <span className="lp-logo-kero">Kero</span><span className="lp-logo-movie">Movie</span>
-            </span>
-          </Link>
           <div className="lp-nav-tabs">
             <Link to="/" className="lp-tab">Home</Link>
             <Link to="/login" className="lp-tab">Log In</Link>

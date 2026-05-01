@@ -14,8 +14,30 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api\/rekognition/, ''),
         },
-        '/api/chat': { target: 'http://localhost:8080', changeOrigin: true },
-        '/api/itunes': { target: 'http://localhost:8080', changeOrigin: true },
+        '/api/chat': {
+          target: 'http://localhost:8080',
+          changeOrigin: true,
+          configure: (proxy) => {
+            proxy.on('error', (_err, _req, res) => {
+              if (!res.headersSent) {
+                res.writeHead(503, { 'Content-Type': 'application/json' });
+              }
+              res.end(JSON.stringify({ error: 'Local backend offline. Run: cd backend && go run main.go' }));
+            });
+          },
+        },
+        '/api/itunes': {
+          target: 'http://localhost:8080',
+          changeOrigin: true,
+          configure: (proxy) => {
+            proxy.on('error', (_err, _req, res) => {
+              if (!res.headersSent) {
+                res.writeHead(503, { 'Content-Type': 'application/json' });
+              }
+              res.end(JSON.stringify({ error: 'Local backend offline. Run: cd backend && go run main.go' }));
+            });
+          },
+        },
       },
     },
   };

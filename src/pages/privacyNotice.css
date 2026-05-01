@@ -2,6 +2,10 @@
    PRIVACY NOTICE PAGE
    ═══════════════════════════════════════════════ */
 
+.pn-page .lp-nav {
+  justify-content: flex-end;
+}
+
 .pn-page {
   min-height: 100vh;
   display: flex;

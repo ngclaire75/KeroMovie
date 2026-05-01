@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import chatbotImg from '../../../images/chatbot.png';
+import chatbotImg from '../../../images/chatbot2.png';
 import miffyImg from '../../../images/miffy.png';
 import './Chatbot.css';
 
@@ -46,7 +46,7 @@ async function readFileAsBase64(file) {
   });
 }
 
-export default function Chatbot() {
+export default function Chatbot({ onHome = false }) {
   const navigate = useNavigate();
   const [open, setOpen]           = useState(false);
   const [input, setInput]         = useState('');
@@ -62,6 +62,16 @@ export default function Chatbot() {
 
   const bubbleTimer = useRef(null);
 
+  // On mobile: show bubble immediately on page load for 20s
+  useEffect(() => {
+    const isMobile = window.matchMedia('(max-width: 480px)').matches;
+    if (isMobile && !open) {
+      setShowBubble(true);
+      bubbleTimer.current = setTimeout(() => setShowBubble(false), 20000);
+    }
+    return () => clearTimeout(bubbleTimer.current);
+  }, []);
+
   function showHint() {
     if (open) return;
     setShowBubble(true);
@@ -71,10 +81,7 @@ export default function Chatbot() {
     clearTimeout(bubbleTimer.current);
   }
   function touchHint() {
-    if (open) return;
-    setShowBubble(true);
-    clearTimeout(bubbleTimer.current);
-    bubbleTimer.current = setTimeout(() => setShowBubble(false), 3000);
+    // no-op on mobile — bubble is shown automatically on page load only
   }
 
   useEffect(() => {
@@ -166,7 +173,7 @@ export default function Chatbot() {
       )}
 
       <button
-        className="kb-fab"
+        className={`kb-fab${onHome ? ' kb-fab--home' : ''}`}
         onClick={() => { setOpen(o => !o); hideHint(); }}
         onMouseEnter={showHint}
         onMouseLeave={hideHint}

@@ -5,17 +5,17 @@
 /* ── Bubble hint ── */
 .kb-bubble-hint {
   position: fixed;
-  bottom: 105px;
+  bottom: 132px;
   right: 24px;
   z-index: 1201;
   background: #fff;
   color: #222;
   font-family: inherit;
-  font-size: 0.78rem;
+  font-size: 0.88rem;
   font-weight: 600;
   line-height: 1.4;
-  padding: 8px 14px;
-  border-radius: 12px;
+  padding: 10px 16px;
+  border-radius: 14px;
   box-shadow: 0 2px 12px rgba(0,0,0,0.18), 0 1px 4px rgba(0,0,0,0.1);
   white-space: nowrap;
   pointer-events: none;
@@ -25,13 +25,13 @@
 .kb-bubble-hint::after {
   content: '';
   position: absolute;
-  bottom: -8px;
-  right: 18px;
+  bottom: -7px;
+  right: 20px;
   width: 0;
   height: 0;
-  border-left: 8px solid transparent;
-  border-right: 8px solid transparent;
-  border-top: 8px solid #fff;
+  border-left: 9px solid transparent;
+  border-right: 9px solid transparent;
+  border-top: 9px solid #fff;
 }
 
 /* ── Floating action button ── */
@@ -52,9 +52,14 @@
 
 .kb-fab:hover { transform: scale(1.08); }
 
+/* On home page, sit above the "keromovie designed by claire" fixed text */
+.kb-fab--home {
+  bottom: 48px;
+}
+
 .kb-fab-img {
-  width: 88px;
-  height: 88px;
+  width: 72px;
+  height: 72px;
   object-fit: contain;
   display: block;
   filter:
@@ -71,7 +76,7 @@
 
 .kb-panel {
   position: fixed;
-  bottom: 90px;
+  bottom: 135px;
   right: 24px;
   z-index: 1199;
   width: 340px;
@@ -175,11 +180,13 @@
 .kb-messages {
   flex: 1;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch; /* smooth momentum scroll on iOS */
   padding: 28px 12px 14px;
   display: flex;
   flex-direction: column;
   gap: 10px;
   scrollbar-width: none;
+  overscroll-behavior: contain; /* stop scroll propagating to page behind */
 }
 
 .kb-messages::-webkit-scrollbar { display: none; }
@@ -423,24 +430,23 @@
 @media (max-width: 480px) {
   .kb-panel {
     right: 12px;
-    bottom: 84px;
+    bottom: 100px;
     width: calc(100vw - 24px);
     height: 460px;
   }
 
   .kb-fab {
-    right: 14px;
-    bottom: 16px;
+    right: 24px;
+    bottom: 24px;
   }
 
   .kb-fab-img {
-    width: 76px;
-    height: 76px;
+    width: 58px;
+    height: 58px;
   }
 
   .kb-bubble-hint {
-    right: 72px;
-    bottom: 82px;
-    font-size: 0.42rem;
+    right: 24px;
+    bottom: 96px;
   }
 }
