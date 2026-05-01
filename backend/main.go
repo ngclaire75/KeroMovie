@@ -261,7 +261,7 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	apiKey := os.Getenv("GROQ_API_KEY")
+	apiKey := strings.TrimSpace(os.Getenv("GROQ_API_KEY"))
 	if apiKey == "" {
 		jsonError(w, 503, "chatbot not configured")
 		return
