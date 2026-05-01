@@ -97,7 +97,7 @@ FEATURES:
 - Community Forum: post reviews with star ratings, read others' reviews, filter by movie
 - Profile settings on Dashboard: update username, email address, or password
 
-Only answer questions about KeroMovie and its features. If asked about something unrelated, politely say you can only help with KeroMovie.
+You can also analyze images and transcribe audio files that users attach. For images, describe what you see and relate it to movies or KeroMovie features if relevant. For audio transcriptions, summarize or respond to the content helpfully.
 
 When the user asks to navigate to a page or you recommend they visit one, include this exact line at the very end of your reply (nothing after it):
 NAVIGATE:{"path":"/path","label":"Page Name"}
@@ -132,12 +132,12 @@ type chatResponse struct {
 
 const modelVision = "meta-llama/llama-4-scout-17b-16e-instruct"
 
-func groqEndpoint() string {
+func groqBase() string {
 	base := os.Getenv("GROQ_BASE_URL")
 	if base == "" {
 		base = "https://api.groq.com/openai/v1"
 	}
-	return base + "/chat/completions"
+	return base
 }
 
 func groqTextModel() string {
@@ -148,8 +148,8 @@ func groqTextModel() string {
 }
 
 type groqMsg struct {
-	Role    string      `json:"role"`
-	Content any `json:"content"`
+	Role    string `json:"role"`
+	Content any    `json:"content"`
 }
 
 type groqRequest struct {
@@ -169,7 +169,7 @@ type groqResponse struct {
 
 func callGroq(apiKey, model string, msgs []groqMsg) (string, error) {
 	payload, _ := json.Marshal(groqRequest{Model: model, Messages: msgs, MaxTokens: 512, Temperature: 0.5})
-	req, _ := http.NewRequest("POST", groqEndpoint(), bytes.NewReader(payload))
+	req, _ := http.NewRequest("POST", groqBase()+"/chat/completions", bytes.NewReader(payload))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+apiKey)
 	res, err := http.DefaultClient.Do(req)
@@ -192,50 +192,53 @@ func callGroq(apiKey, model string, msgs []groqMsg) (string, error) {
 	return gr.Choices[0].Message.Content, nil
 }
 
-type auddResult struct {
-	Title       string `json:"title"`
-	Artist      string `json:"artist"`
-	Album       string `json:"album"`
-	ReleaseDate string `json:"release_date"`
-}
-
-type auddApiResponse struct {
-	Status string      `json:"status"`
-	Result *auddResult `json:"result"`
-}
-
-func recognizeSong(b64Audio, apiToken string) string {
+// transcribeAudio sends audio to Groq Whisper and returns the transcript.
+func transcribeAudio(b64Audio, filename, apiKey string) (string, error) {
 	audioData, err := base64.StdEncoding.DecodeString(b64Audio)
 	if err != nil {
-		return "Could not decode the audio file."
+		return "", fmt.Errorf("could not decode audio file")
 	}
+
 	var buf bytes.Buffer
 	mw := multipart.NewWriter(&buf)
-	mw.WriteField("api_token", apiToken)
-	mw.WriteField("return", "apple_music,spotify")
-	fw, _ := mw.CreateFormFile("file", "audio")
-	fw.Write(audioData)
+	fw, err := mw.CreateFormFile("file", filename)
+	if err != nil {
+		return "", err
+	}
+	if _, err = fw.Write(audioData); err != nil {
+		return "", err
+	}
+	mw.WriteField("model", "whisper-large-v3-turbo")
+	mw.WriteField("response_format", "json")
 	mw.Close()
 
-	req, _ := http.NewRequest("POST", "https://api.audd.io/", &buf)
+	req, _ := http.NewRequest("POST", groqBase()+"/audio/transcriptions", &buf)
 	req.Header.Set("Content-Type", mw.FormDataContentType())
-	client := &http.Client{Timeout: 30 * time.Second}
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+
+	client := &http.Client{Timeout: 60 * time.Second}
 	res, err := client.Do(req)
 	if err != nil {
-		return "Could not reach the audio recognition service."
+		return "", fmt.Errorf("could not reach transcription service")
 	}
 	defer res.Body.Close()
 	body, _ := io.ReadAll(res.Body)
-	var ar auddApiResponse
-	if json.Unmarshal(body, &ar) != nil || ar.Status != "success" || ar.Result == nil {
-		return "Could not identify the song. Please try a clearer audio clip."
+
+	if res.StatusCode != 200 {
+		snippet := string(body)
+		if len(snippet) > 300 {
+			snippet = snippet[:300]
+		}
+		return "", fmt.Errorf("transcription error: %s", snippet)
 	}
-	year := "Unknown"
-	if len(ar.Result.ReleaseDate) >= 4 {
-		year = ar.Result.ReleaseDate[:4]
+
+	var result struct {
+		Text string `json:"text"`
 	}
-	return fmt.Sprintf("Song identified!\n• Title: %s\n• Artist: %s\n• Album: %s\n• Year: %s",
-		ar.Result.Title, ar.Result.Artist, ar.Result.Album, year)
+	if json.Unmarshal(body, &result) != nil || strings.TrimSpace(result.Text) == "" {
+		return "", fmt.Errorf("empty transcription response")
+	}
+	return strings.TrimSpace(result.Text), nil
 }
 
 func chatHandler(w http.ResponseWriter, r *http.Request) {
@@ -276,7 +279,7 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 		msgs = append(msgs, groqMsg{Role: h.Role, Content: h.Content})
 	}
 
-	var audioResults []string
+	var audioTranscripts []string
 	var imageBlocks []map[string]any
 	hasImages := false
 
@@ -290,13 +293,18 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 					"url": "data:" + att.Type + ";base64," + att.Base64,
 				},
 			})
+
 		case strings.HasPrefix(att.Type, "audio/"):
-			auddKey := os.Getenv("AUDD_API_KEY")
-			if auddKey != "" {
-				audioResults = append(audioResults, fmt.Sprintf("%s\n%s", att.Name, recognizeSong(att.Base64, auddKey)))
+			transcript, err := transcribeAudio(att.Base64, att.Name, apiKey)
+			if err != nil {
+				log.Printf("audio transcription error (%s): %v", att.Name, err)
+				audioTranscripts = append(audioTranscripts,
+					fmt.Sprintf("[Audio file: %s — could not transcribe: %s]", att.Name, err.Error()))
 			} else {
-				audioResults = append(audioResults, fmt.Sprintf("%s\nAudio recognition is not available.", att.Name))
+				audioTranscripts = append(audioTranscripts,
+					fmt.Sprintf("[Transcription of %s]:\n%s", att.Name, transcript))
 			}
+
 		default:
 			if decoded, err := base64.StdEncoding.DecodeString(att.Base64); err == nil {
 				text := string(decoded)
@@ -308,15 +316,14 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if len(audioResults) > 0 && !hasImages && strings.TrimSpace(req.Message) == "" {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(chatResponse{Reply: strings.Join(audioResults, "\n\n")})
-		return
+	userText := req.Message
+	if len(audioTranscripts) > 0 {
+		userText += "\n\n" + strings.Join(audioTranscripts, "\n\n")
 	}
 
-	userText := req.Message
-	if len(audioResults) > 0 {
-		userText += "\n\nAudio recognition results:\n" + strings.Join(audioResults, "\n\n")
+	// Provide a default prompt for image-only messages so the vision model has context
+	if strings.TrimSpace(userText) == "" && hasImages {
+		userText = "Please describe or analyze the attached image(s)."
 	}
 
 	model := groqTextModel()
@@ -358,7 +365,7 @@ func jsonError(w http.ResponseWriter, status int, msg string) {
 	fmt.Fprintf(w, `{"error":%q}`, msg)
 }
 
-// ── Entry point ───────────────────────────────────────────────────────────────
+// ── Entry point ─────────────────────────────────────────────────────���─────────
 
 func main() {
 	loadDotEnv()
