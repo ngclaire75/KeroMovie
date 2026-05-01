@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { collection, doc, query, where, onSnapshot, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { getProfile } from '../lib/authHelpers';
 import { useApp } from '../context/AppContext';
@@ -257,27 +257,18 @@ export default function Dashboard() {
   const greeting     = getGreeting();
   const displayName  = profile?.username || profile?.firstName || currentUser || 'User';
 
-  // Auth: load profile via getDoc (reliable HTTP) + onSnapshot for live updates
+  // Auth: load profile via getDoc (plain HTTP — reliable in all environments)
   useEffect(() => {
-    let profileUnsub = null;
     const authUnsub = auth.onAuthStateChanged(async user => {
       setAuthUser(user || null);
-      if (profileUnsub) { profileUnsub(); profileUnsub = null; }
       if (!user) { setProfile(null); return; }
-
-      // Guaranteed one-time read — works even if WebSocket/long-poll fails
       const p = await getProfile(user.uid);
       setProfile(p || {
         firstName: user.displayName?.split(' ')[0] || 'User',
         username:  user.email?.split('@')[0] || 'user',
       });
-
-      // Real-time updater (bonus: keeps name in sync if another session updates it)
-      profileUnsub = onSnapshot(doc(db, 'users', user.uid), snap => {
-        if (snap.exists()) setProfile(snap.data());
-      }, () => {});
     });
-    return () => { authUnsub(); if (profileUnsub) profileUnsub(); };
+    return authUnsub;
   }, []);
 
   // Load this user's forum posts via getDocs (plain HTTP — no composite index needed)

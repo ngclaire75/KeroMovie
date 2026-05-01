@@ -111,7 +111,7 @@ export default function Forums() {
     }
   }
 
-  useEffect(() => { fetchPosts(); }, []);
+  useEffect(() => { if (authReady) fetchPosts(); }, [authReady]);
 
   // TMDB debounced search
   useEffect(() => {

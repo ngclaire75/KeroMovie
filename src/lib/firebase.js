@@ -26,9 +26,9 @@ setPersistence(auth, browserLocalPersistence).catch(() =>
   )
 );
 
-// Auto-detect best transport: WebSocket on desktop, long polling on iOS Safari
+// Force long polling (HTTP) — WebSocket connections are unreliable on Vercel CDN
 export const db = initializeFirestore(app, {
-  experimentalAutoDetectLongPolling: true,
+  experimentalForceLongPolling: true,
 });
 
 export const googleProvider = new GoogleAuthProvider();
