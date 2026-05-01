@@ -7,7 +7,6 @@ import (
 	"net/url"
 )
 
-// Handler proxies iTunes Search API server-side to avoid CORS/network issues on mobile browsers.
 func Handler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")

@@ -38,9 +38,9 @@ NAVIGATE:{"path":"/path","label":"Page Name"}
 Only include this line when navigation is clearly relevant.`
 
 const (
-	groqURL         = "https://api.groq.com/openai/v1/chat/completions"
-	modelText       = "llama-3.1-8b-instant"
-	modelVision     = "meta-llama/llama-4-scout-17b-16e-instruct"
+	groqURL     = "https://api.groq.com/openai/v1/chat/completions"
+	modelText   = "llama-3.1-8b-instant"
+	modelVision = "meta-llama/llama-4-scout-17b-16e-instruct"
 )
 
 type historyMsg struct {
@@ -186,7 +186,6 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, 503, map[string]string{"error": "chatbot not configured"}); return
 	}
 
-	// Build history
 	history := req.History
 	if len(history) > 8 {
 		history = history[len(history)-8:]
@@ -196,7 +195,6 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		msgs = append(msgs, groqMessage{Role: h.Role, Content: h.Content})
 	}
 
-	// Process attachments
 	var audioResults []string
 	var imageBlocks []map[string]interface{}
 	hasImages := false
@@ -229,7 +227,6 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Return audio results directly if only audio attached
 	if len(audioResults) > 0 && !hasImages && strings.TrimSpace(req.Message) == "" {
 		json.NewEncoder(w).Encode(chatResponse{Reply: strings.Join(audioResults, "\n\n")})
 		return
@@ -240,7 +237,6 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		userText += "\n\nAudio recognition results:\n" + strings.Join(audioResults, "\n\n")
 	}
 
-	// Build user message
 	model := modelText
 	if hasImages {
 		model = modelVision
