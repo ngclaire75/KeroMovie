@@ -178,6 +178,13 @@ func callGroq(apiKey, model string, msgs []groqMsg) (string, error) {
 	}
 	defer res.Body.Close()
 	body, _ := io.ReadAll(res.Body)
+	if res.StatusCode != 200 {
+		snippet := string(body)
+		if len(snippet) > 200 {
+			snippet = snippet[:200]
+		}
+		return "", fmt.Errorf("groq %d: %s", res.StatusCode, snippet)
+	}
 	var gr groqResponse
 	if json.Unmarshal(body, &gr) != nil || len(gr.Choices) == 0 {
 		return "", fmt.Errorf("unexpected response")
@@ -323,7 +330,7 @@ func chatHandler(w http.ResponseWriter, r *http.Request) {
 
 	replyText, err := callGroq(apiKey, model, msgs)
 	if err != nil {
-		jsonError(w, 502, "AI service unreachable")
+		jsonError(w, 502, "AI service unreachable: "+err.Error())
 		return
 	}
 	resp := chatResponse{Reply: replyText}
