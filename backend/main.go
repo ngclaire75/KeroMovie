@@ -363,7 +363,11 @@ func main() {
 	mux.HandleFunc("/api/itunes", itunesHandler)
 	mux.HandleFunc("/api/chat", chatHandler)
 
-	addr := ":8080"
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	addr := ":" + port
 	log.Printf("Backend running on http://localhost%s", addr)
 	log.Fatal(http.ListenAndServe(addr, mux))
 }
