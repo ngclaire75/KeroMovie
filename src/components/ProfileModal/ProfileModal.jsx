@@ -228,7 +228,7 @@ export default function ProfileModal({ profile, onClose, onProfileUpdate }) {
     );
   }
 
-  const displayName = profile?.firstName || profile?.username || 'User';
+  const displayName = profile?.username || profile?.firstName || 'User';
   const initial     = displayName.charAt(0).toUpperCase();
 
   return (

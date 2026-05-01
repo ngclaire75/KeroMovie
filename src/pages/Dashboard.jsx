@@ -15,6 +15,7 @@ const IMG_W500  = 'https://image.tmdb.org/t/p/w500';
 const IMG_OG    = 'https://image.tmdb.org/t/p/original';
 const IMG_W200  = 'https://image.tmdb.org/t/p/w185';
 const IMG_W342  = 'https://image.tmdb.org/t/p/w342';
+const IMG_W780  = 'https://image.tmdb.org/t/p/w780';
 
 const AWS_KEY    = import.meta.env.VITE_AWS_ACCESS_KEY_ID;
 const AWS_SECRET = import.meta.env.VITE_AWS_SECRET_ACCESS_KEY;
@@ -254,7 +255,7 @@ export default function Dashboard() {
   const fileInputRef = useRef(null);
 
   const greeting     = getGreeting();
-  const displayName  = profile?.firstName || profile?.username || currentUser || 'User';
+  const displayName  = profile?.username || profile?.firstName || currentUser || 'User';
 
   // Auth: load profile via getDoc (reliable HTTP) + onSnapshot for live updates
   useEffect(() => {
@@ -1031,7 +1032,7 @@ export default function Dashboard() {
                   <div
                     key={`${m.id}-${releaseIdx}`}
                     className={`db-rel-card${i === 0 ? ' db-rel-card--large' : ''}`}
-                    style={{ backgroundImage: `url(${IMG_W500}${i === 0 ? (m.backdrop_path || m.poster_path) : m.poster_path})` }}
+                    style={{ backgroundImage: `url(${i === 0 ? (m.backdrop_path ? `${IMG_OG}${m.backdrop_path}` : `${IMG_W780}${m.poster_path}`) : `${IMG_W780}${m.poster_path}`})` }}
                   >
                     <div className="db-rel-overlay" />
                     <div className="db-rel-foot">

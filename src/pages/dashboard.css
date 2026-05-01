@@ -2025,8 +2025,7 @@
     overflow-y: hidden;
   }
 
-  /* Prevent iOS Safari auto-zoom on input focus (requires >= 16px) */
-  .db-st-search-input { font-size: 16px; }
+  .db-st-search-input { font-size: 0.72rem; }
 }
 
 /* ══════════════════════════════
@@ -2137,6 +2136,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 72px;
 }
 
 /* ── Favourite Cast grid ── */

@@ -212,7 +212,7 @@ export default function Forums() {
     ? posts.filter(p => p.movieId === filterMovie.id)
     : posts;
 
-  const displayName = profile?.firstName || profile?.username || authUser?.email?.split('@')[0] || 'Guest';
+  const displayName = profile?.username || profile?.firstName || authUser?.email?.split('@')[0] || 'Guest';
   const initial     = displayName.charAt(0).toUpperCase();
 
   return (
