@@ -11,7 +11,9 @@ import musicImg    from '../../images/music.png';
 import tasteImg    from '../../images/taste.png';
 import cameraImg   from '../../images/camera.png';
 import activityImg from '../../images/activity.png';
-import playlistBg from '../../images/playlistbackground.gif';
+import playlistBg  from '../../images/playlistbackground.gif';
+import panelGif    from '../../images/panel.gif';
+import loadingImg  from '../../images/loading.png';
 import './dashboard.css';
 
 const TMDB_KEY  = import.meta.env.VITE_TMDB_KEY;
@@ -391,7 +393,7 @@ export default function Dashboard() {
     setSoundtrack([]);
     if (!featured?.title) return;
     const term = encodeURIComponent(featured.title + ' original motion picture soundtrack');
-    fetch(`/api/itunes?term=${term}&limit=20`)
+    fetch(`https://itunes.apple.com/search?term=${term}&media=music&entity=song&limit=20`)
       .then(r => r.json())
       .then(d => {
         const KW = ['soundtrack', 'score', 'motion picture', 'original'];
@@ -500,7 +502,7 @@ export default function Dashboard() {
     setStSearchResults([]);
     const term = encodeURIComponent(stSearch.trim() + ' original motion picture soundtrack');
     try {
-      const d = await fetch(`/api/itunes?term=${term}&limit=20`).then(r => r.json());
+      const d = await fetch(`https://itunes.apple.com/search?term=${term}&media=music&entity=song&limit=20`).then(r => r.json());
       const KW = ['soundtrack', 'score', 'motion picture', 'original'];
       const tracks = (d.results || []).filter(t => {
         if (!t.previewUrl) return false;
@@ -930,7 +932,7 @@ export default function Dashboard() {
                   {/* Scanning overlay */}
                   {scanning && (
                     <div className="db-scanner-loading">
-                      <span className="db-scanner-spin" />
+                      <img src={loadingImg} alt="" className="app-loader" />
                       <p>{scanMsg}</p>
                     </div>
                   )}
@@ -1188,7 +1190,7 @@ export default function Dashboard() {
                     </button>
                   )}
                   <button type="submit" className="db-st-search-btn" disabled={castSearching || !castSearch.trim()}>
-                    {castSearching ? <span className="db-st-spin" /> : <IcoExplore />}
+                    {castSearching ? <img src={loadingImg} alt="" className="app-loader app-loader--sm" /> : <IcoExplore />}
                   </button>
                 </form>
 
@@ -1275,7 +1277,7 @@ export default function Dashboard() {
                       </button>
                     )}
                     <button type="submit" className="db-st-search-btn" disabled={stSearching || !stSearch.trim()}>
-                      {stSearching ? <span className="db-st-spin" /> : <IcoExplore />}
+                      {stSearching ? <img src={loadingImg} alt="" className="app-loader app-loader--sm" /> : <IcoExplore />}
                     </button>
                   </form>
 
@@ -1405,7 +1407,6 @@ export default function Dashboard() {
       {/* ── Now Playing Modal ── */}
       {nowPlaying && (
         <div className="db-np-overlay" onClick={closeNowPlaying}>
-          <div className="db-np-bg" style={{ backgroundImage: `url(${playlistBg})` }} />
           <div className="db-np-modal" onClick={e => e.stopPropagation()}>
             <button className="db-np-close" onClick={closeNowPlaying} title="Close"><IcoX /></button>
 
@@ -1500,7 +1501,6 @@ export default function Dashboard() {
       {/* ── Actor Detail Modal ── */}
       {viewingActor && (
         <div className="db-actor-overlay" onClick={closeActor}>
-          <div className="db-np-bg" style={{ backgroundImage: `url(${playlistBg})` }} />
           <div className="db-actor-modal" onClick={e => e.stopPropagation()}>
             <button className="db-np-close" onClick={closeActor} title="Close"><IcoX /></button>
 
@@ -1517,11 +1517,12 @@ export default function Dashboard() {
                 {isFavCastMember(viewingActor.id) ? <IcoHeartFill /> : <IcoHeart />}
                 {isFavCastMember(viewingActor.id) ? 'Favourited' : 'Favourite'}
               </button>
+              <img src={panelGif} alt="" className="db-actor-panel-gif" />
             </div>
 
             <div className="db-actor-right">
               {actorLoading ? (
-                <div className="db-actor-loading"><span className="db-scanner-spin" /></div>
+                <div className="db-actor-loading"><img src={loadingImg} alt="" className="app-loader" /></div>
               ) : actorDetails ? (
                 <>
                   <h2 className="db-actor-name">{actorDetails.name}</h2>
@@ -1543,7 +1544,9 @@ export default function Dashboard() {
                         {actorDetails.movies.map(m => (
                           <div key={m.id} className="db-actor-movie-item">
                             <img src={`${IMG_W342}${m.poster_path}`} alt={m.title} className="db-actor-movie-poster" />
-                            <p className="db-actor-movie-title">{m.title}</p>
+                            <div className="db-actor-movie-hover">
+                              <span className="db-actor-movie-title">{m.title}</span>
+                            </div>
                           </div>
                         ))}
                       </div>

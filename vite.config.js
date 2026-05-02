@@ -26,18 +26,6 @@ export default defineConfig(({ mode }) => {
             });
           },
         },
-        '/api/itunes': {
-          target: 'http://localhost:8080',
-          changeOrigin: true,
-          configure: (proxy) => {
-            proxy.on('error', (_err, _req, res) => {
-              if (!res.headersSent) {
-                res.writeHead(503, { 'Content-Type': 'application/json' });
-              }
-              res.end(JSON.stringify({ error: 'Local backend offline. Run: cd backend && go run main.go' }));
-            });
-          },
-        },
       },
     },
   };
