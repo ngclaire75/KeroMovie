@@ -147,14 +147,27 @@
 .fr-page-title {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 0;
   font-size: 1.5rem;
   font-weight: 800;
   color: #fff;
   margin-bottom: 6px;
+  margin-left: -28px;
 }
 
 .fr-page-title svg { width: 22px; height: 22px; color: #e74c3c; }
+
+@keyframes fr-teddy-float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-6px); }
+}
+
+.fr-page-title-teddy {
+  width: 80px;
+  height: auto;
+  flex-shrink: 0;
+  margin-right: -8px;
+}
 
 .fr-page-sub {
   font-size: 0.88rem;
@@ -398,15 +411,25 @@
 
 /* Post success banner */
 .fr-post-success {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   font-size: 0.82rem;
-  font-weight: 600;
-  color: #6ee7a0;
-  padding: 10px 14px;
-  background: rgba(52, 211, 153, 0.1);
-  border: 1px solid rgba(52, 211, 153, 0.25);
-  border-radius: 8px;
+  font-weight: 700;
+  color: #7a0a0a;
+  padding: 8px 18px 8px 8px;
+  background: #fff;
+  border-radius: 999px;
   margin-bottom: 14px;
-  text-align: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+}
+
+.fr-post-success-gif {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
 }
 
 /* Feed loading spinner */
@@ -434,13 +457,25 @@
 
 /* Form error */
 .fr-form-error {
-  font-size: 0.78rem;
-  color: #ff7675;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #7a0a0a;
+  padding: 8px 18px 8px 8px;
+  background: #fff;
+  border-radius: 999px;
   margin-top: 8px;
-  padding: 8px 12px;
-  background: rgba(231,76,60,0.08);
-  border-radius: 6px;
-  border: 1px solid rgba(231,76,60,0.2);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+}
+
+.fr-form-error-gif {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
 }
 
 /* Submit */
@@ -530,6 +565,7 @@
 }
 
 .fr-feed-heading svg { width: 16px; height: 16px; color: #e74c3c; flex-shrink: 0; }
+.fr-feed-heading-img { width: 20px; height: 20px; object-fit: contain; flex-shrink: 0; }
 .fr-feed-heading em  { font-style: normal; color: #e74c3c; }
 
 .fr-post-count {

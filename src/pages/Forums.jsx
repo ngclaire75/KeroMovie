@@ -11,6 +11,9 @@ import logo from '../../images/keromovielogo.png';
 import forumCharacter from '../../images/forumcharacter.png';
 import popupChar   from '../../images/popup.png';
 import loadingImg  from '../../images/loading.png';
+import reviewGif   from '../../images/review.gif';
+import chatImg     from '../../images/chat.png';
+import teddyImg    from '../../images/teddy.gif';
 import './forums.css';
 
 const TMDB_KEY  = import.meta.env.VITE_TMDB_KEY;
@@ -260,7 +263,7 @@ export default function Forums() {
 
       {/* ── Page heading ── */}
       <div className="fr-page-head">
-        <h1 className="fr-page-title"><IcoForum />Community Forums</h1>
+        <h1 className="fr-page-title"><img src={teddyImg} alt="" className="fr-page-title-teddy" />Community Forums</h1>
         <p className="fr-page-sub">Rate and review movies. Share your take with everyone.</p>
       </div>
 
@@ -272,7 +275,10 @@ export default function Forums() {
           <h2 className="fr-compose-title">Write a Review</h2>
 
           {postSuccess && (
-            <div className="fr-post-success">Review posted successfully!</div>
+            <div className="fr-post-success">
+              <img src={reviewGif} alt="" className="fr-post-success-gif" />
+              Review posted successfully!
+            </div>
           )}
 
           {!authUser && authReady ? (
@@ -360,7 +366,12 @@ export default function Forums() {
               rows={4}
             />
 
-            {formError && <p className="fr-form-error">{formError}</p>}
+            {formError && (
+              <p className="fr-form-error">
+                <img src={reviewGif} alt="" className="fr-form-error-gif" />
+                {formError}
+              </p>
+            )}
 
             <button
               type="submit"
@@ -377,9 +388,9 @@ export default function Forums() {
           <div className="fr-feed-bar">
             <span className="fr-feed-heading">
               {filterMovie ? (
-                <><IcoFilter />Reviews for <em>{filterMovie.title}</em></>
+                <><img src={chatImg} alt="" className="fr-feed-heading-img" />Reviews for <em>{filterMovie.title}</em></>
               ) : (
-                <><IcoForum />All Reviews</>
+                <><img src={chatImg} alt="" className="fr-feed-heading-img" />All Reviews</>
               )}
             </span>
             <span className="fr-post-count">{displayPosts.length} post{displayPosts.length !== 1 ? 's' : ''}</span>
