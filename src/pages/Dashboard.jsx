@@ -12,7 +12,7 @@ import tasteImg    from '../../images/taste.png';
 import cameraImg   from '../../images/camera.png';
 import activityImg from '../../images/activity.png';
 import playlistBg  from '../../images/playlistbackground.gif';
-import panelGif    from '../../images/panel.gif';
+import panelGif    from '../../images/totoro.gif';
 import loadingImg  from '../../images/loading.png';
 import './dashboard.css';
 
@@ -810,6 +810,14 @@ export default function Dashboard() {
       {/* ── Center + Right ── */}
       <div className="db-center">
 
+        {/* ── Auth gate ── */}
+        {!authUser ? (
+          <div className="db-auth-gate">
+            <img src={panelGif} alt="" className="db-auth-totoro" />
+            <p className="db-auth-msg">You must be logged in to access the dashboard.</p>
+          </div>
+        ) : <>
+
         {/* ── Desktop Topbar ── */}
         <header className="db-topbar">
           <div className="db-topbar-left">
@@ -1402,6 +1410,7 @@ export default function Dashboard() {
 
           </aside>
         </div>
+        </> }
       </div>
 
       {/* ── Now Playing Modal ── */}

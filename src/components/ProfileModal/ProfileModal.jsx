@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { auth } from '../../lib/firebase';
 import { getProfile, updateUsername, updateUserPassword, updateUserEmail } from '../../lib/authHelpers';
 import { useApp } from '../../context/AppContext';
+import errorGif from '../../../images/error.gif';
 import './ProfileModal.css';
 
 const COUNTRIES = [
@@ -234,7 +235,7 @@ export default function ProfileModal({ profile, onClose, onProfileUpdate }) {
   return (
     <>
       <div className="pm-overlay" onClick={onClose} />
-      <div className="pm-panel">
+      <div className={`pm-panel${(successMsg || errorMsg) ? ' pm-panel--popup-open' : ''}`}>
 
         {/* Header */}
         <div className="pm-header">
@@ -259,9 +260,18 @@ export default function ProfileModal({ profile, onClose, onProfileUpdate }) {
           <button className={`pm-tab${tab === 'prefs'   ? ' pm-tab--active' : ''}`} onClick={() => setTab('prefs')}>Preferences</button>
         </div>
 
-        {/* Feedback messages */}
-        {successMsg && <div className="pm-feedback pm-feedback--success"><IcoCheck />{successMsg}</div>}
-        {errorMsg   && <div className="pm-feedback pm-feedback--error"><IcoX />{errorMsg}</div>}
+        {/* Feedback popup */}
+        {(successMsg || errorMsg) && (
+          <div className="pm-popup-backdrop" onClick={() => { setSuccessMsg(''); setErrorMsg(''); }}>
+            <div className="pm-popup" onClick={e => e.stopPropagation()}>
+              <button className="pm-popup-close" onClick={() => { setSuccessMsg(''); setErrorMsg(''); }}>
+                <IcoX />
+              </button>
+              <img src={errorGif} alt="" className="pm-popup-gif" />
+              <div className="pm-popup-msg">{successMsg || errorMsg}</div>
+            </div>
+          </div>
+        )}
 
         <div className="pm-body">
 
@@ -319,9 +329,9 @@ export default function ProfileModal({ profile, onClose, onProfileUpdate }) {
               {/* Password */}
               <div className="pm-section">
                 <div className="pm-section-label"><IcoLock />Change Password</div>
-                <form className="pm-form" onSubmit={handlePasswordChange}>
+                <form className="pm-form" onSubmit={handlePasswordChange} autoComplete="off">
                   <div className="pm-field">
-                    <input className="pm-input" type="password" placeholder="Current password" value={currentPw} onChange={e => setCurrentPw(e.target.value)} autoComplete="current-password" />
+                    <input className="pm-input" type="password" placeholder="Current password" value={currentPw} onChange={e => setCurrentPw(e.target.value)} autoComplete="new-password" />
                   </div>
                   <div className="pm-field">
                     <input className="pm-input" type="password" placeholder="New password" value={newPw} onChange={e => setNewPw(e.target.value)} autoComplete="new-password" />
@@ -338,13 +348,15 @@ export default function ProfileModal({ profile, onClose, onProfileUpdate }) {
               {/* Email */}
               <div className="pm-section">
                 <div className="pm-section-label"><IcoMail />Change Email</div>
-                <p className="pm-current-val">Current: <strong>{profile?.email || auth.currentUser?.email || '—'}</strong></p>
-                <form className="pm-form" onSubmit={handleEmailChange}>
+                {(profile?.email || auth.currentUser?.email) && (
+                  <p className="pm-current-val">Current: <strong>{profile?.email || auth.currentUser?.email}</strong></p>
+                )}
+                <form className="pm-form" onSubmit={handleEmailChange} autoComplete="off">
                   <div className="pm-field">
-                    <input className="pm-input" type="email" placeholder="New email address" value={newEmail} onChange={e => setNewEmail(e.target.value)} autoComplete="email" />
+                    <input className="pm-input" type="text" placeholder="New email address" value={newEmail} onChange={e => setNewEmail(e.target.value)} autoComplete="off" />
                   </div>
                   <div className="pm-field">
-                    <input className="pm-input" type="password" placeholder="Current password to confirm" value={emailPw} onChange={e => setEmailPw(e.target.value)} autoComplete="current-password" />
+                    <input className="pm-input" type="password" placeholder="Current password to confirm" value={emailPw} onChange={e => setEmailPw(e.target.value)} autoComplete="new-password" />
                   </div>
                   <button type="submit" className="pm-btn pm-btn--primary" disabled={saving === 'email' || !newEmail.trim() || !emailPw}>
                     {saving === 'email' ? 'Saving…' : 'Update Email'}

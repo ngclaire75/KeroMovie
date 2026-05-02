@@ -232,7 +232,7 @@
   right: 12px;
   width: 16px;
   height: 16px;
-  color: rgba(255,255,255,0.35);
+  color: rgba(255,255,255,1);
   pointer-events: none;
   flex-shrink: 0;
 }
@@ -522,9 +522,8 @@ body.lp-scroll-unlock {
     font-size: clamp(1.5rem, 7vw, 2rem);
   }
 
-  /* Prevent iOS auto-zoom on input focus (requires font-size >= 16px) */
   .lp-input {
-    font-size: 16px;
+    font-size: 0.78rem;
   }
 
   .lp-row {

@@ -71,6 +71,15 @@ export default function Chatbot({ onHome = false }) {
     }
   }, []);
 
+  // Dismiss bubble on any screen tap (mobile only)
+  useEffect(() => {
+    if (!showBubble) return;
+    if (!window.matchMedia('(max-width: 480px)').matches) return;
+    function onTap() { setShowBubble(false); clearTimeout(bubbleTimer.current); }
+    document.addEventListener('click', onTap, { once: true });
+    return () => document.removeEventListener('click', onTap);
+  }, [showBubble]);
+
   function showHint() {
     if (open || window.matchMedia('(max-width: 480px)').matches) return;
     setShowBubble(true);
