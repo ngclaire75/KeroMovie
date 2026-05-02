@@ -632,7 +632,19 @@
 }
 
 .db-scanner-placeholder svg { width: 36px; height: 36px; opacity: 0.4; }
-.db-scanner-placeholder p { font-size: 0.78rem; line-height: 1.5; max-width: 260px; }
+.db-scanner-placeholder p   { font-size: 0.78rem; line-height: 1.5; max-width: 260px; }
+
+@keyframes db-cam-float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
+}
+
+.db-scanner-cam-img {
+  width: 124px;
+  height: auto;
+  margin-top: -38px;
+  animation: db-cam-float 2.2s ease-in-out infinite;
+}
 
 .db-scanner-hint {
   font-size: 0.68rem !important;
@@ -910,6 +922,9 @@
 }
 
 .db-empty svg { width: 28px; height: 28px; opacity: 0.35; }
+.db-bm-empty-img    { width: 48px; height: auto; opacity: 0.85; }
+.db-music-empty-img { width: 48px; height: auto; opacity: 0.85; }
+.db-taste-empty-img { width: 48px; height: auto; opacity: 0.85; }
 .db-empty p { font-size: 0.74rem; line-height: 1.55; margin: 0; color: var(--db-text3); }
 
 /* ── Bookmark List ── */

@@ -6,6 +6,10 @@ import { getProfile } from '../lib/authHelpers';
 import { useApp } from '../context/AppContext';
 import ProfileModal from '../components/ProfileModal/ProfileModal';
 import logo from '../../images/keromovielogo.png';
+import bookImg   from '../../images/book.png';
+import musicImg  from '../../images/music.png';
+import tasteImg  from '../../images/taste.png';
+import cameraImg from '../../images/camera.png';
 import playlistBg from '../../images/playlistbackground.gif';
 import './dashboard.css';
 
@@ -918,7 +922,7 @@ export default function Dashboard() {
                   {/* Placeholder */}
                   {!cameraActive && !uploadPreview && (
                     <div className="db-scanner-placeholder">
-                      <IcoCamera />
+                      <img src={cameraImg} alt="" className="db-scanner-cam-img" />
                       <p>Enable camera or upload an image to scan actor faces</p>
                     </div>
                   )}
@@ -1123,7 +1127,7 @@ export default function Dashboard() {
               </div>
               {bookmarkMovies.length === 0 ? (
                 <div className="db-empty">
-                  <IcoBookmark />
+                  <img src={bookImg} alt="" className="db-bm-empty-img" />
                   <p>No bookmarks yet. Browse Explore and tap the bookmark icon on any movie.</p>
                 </div>
               ) : (
@@ -1248,7 +1252,7 @@ export default function Dashboard() {
               return (
                 <div className="db-panel-block">
                   <div className="db-section-row">
-                    <span className="db-section-title">Soundtrack <span className="db-title-music-ico"><IcoMusic /></span></span>
+                    <span className="db-section-title">Soundtrack</span>
                     <span className="db-section-sub">{subLabel}</span>
                   </div>
 
@@ -1290,7 +1294,7 @@ export default function Dashboard() {
                     </div>
                   ) : displayTracks.length === 0 ? (
                     <div className="db-empty">
-                      <IcoMusic />
+                      <img src={musicImg} alt="" className="db-music-empty-img" />
                       <p>{emptyMsg}</p>
                     </div>
                   ) : (
@@ -1345,7 +1349,7 @@ export default function Dashboard() {
                     <span className="db-section-title">Your Taste Profile</span>
                   </div>
                   <div className="db-empty">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    <img src={tasteImg} alt="" className="db-taste-empty-img" />
                     <p>Select your preferred genres in Profile &gt; Preferences to unlock your taste profile.</p>
                     <button className="db-taste-edit" onClick={() => setProfileOpen(true)}>Set preferences</button>
                   </div>
