@@ -393,7 +393,7 @@ export default function Dashboard() {
     setSoundtrack([]);
     if (!featured?.title) return;
     const term = encodeURIComponent(featured.title + ' original motion picture soundtrack');
-    fetch(`https://itunes.apple.com/search?term=${term}&media=music&entity=song&limit=20`)
+    fetch(`/api/itunes?term=${term}&limit=20`)
       .then(r => r.json())
       .then(d => {
         const KW = ['soundtrack', 'score', 'motion picture', 'original'];
@@ -502,7 +502,7 @@ export default function Dashboard() {
     setStSearchResults([]);
     const term = encodeURIComponent(stSearch.trim() + ' original motion picture soundtrack');
     try {
-      const d = await fetch(`https://itunes.apple.com/search?term=${term}&media=music&entity=song&limit=20`).then(r => r.json());
+      const d = await fetch(`/api/itunes?term=${term}&limit=20`).then(r => r.json());
       const KW = ['soundtrack', 'score', 'motion picture', 'original'];
       const tracks = (d.results || []).filter(t => {
         if (!t.previewUrl) return false;
