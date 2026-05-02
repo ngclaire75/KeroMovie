@@ -126,6 +126,7 @@ export default function ProfileModal({ profile, onClose, onProfileUpdate }) {
 
   async function handleUsernameChange(e) {
     e.preventDefault();
+    if (!auth.currentUser) { flashError('Cannot update! You must log in / sign up first.'); return; }
     if (!newUsername.trim()) return;
     setSaving('username');
     try {
@@ -140,6 +141,7 @@ export default function ProfileModal({ profile, onClose, onProfileUpdate }) {
 
   async function handlePasswordChange(e) {
     e.preventDefault();
+    if (!auth.currentUser) { flashError('Cannot update! You must log in / sign up first.'); return; }
     if (!currentPw || !newPw) return;
     if (newPw !== confirmPw) { flashError('New passwords do not match.'); return; }
     if (newPw.length < 6)    { flashError('Password must be at least 6 characters.'); return; }
@@ -155,6 +157,7 @@ export default function ProfileModal({ profile, onClose, onProfileUpdate }) {
 
   async function handleEmailChange(e) {
     e.preventDefault();
+    if (!auth.currentUser) { flashError('Cannot update! You must log in / sign up first.'); return; }
     if (!newEmail.trim() || !emailPw) return;
     setSaving('email');
     try {
