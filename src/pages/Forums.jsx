@@ -458,7 +458,7 @@ export default function Forums() {
         <div className="fr-del-overlay" onClick={() => setConfirmId(null)}>
           <div className="fr-del-dialog" onClick={e => e.stopPropagation()}>
             <svg className="fr-del-frame" viewBox="-28 -28 556 276" xmlns="http://www.w3.org/2000/svg">
-              <path fill="#720000" d="
+              <path fill="#5a0000" stroke="rgba(255,255,255,0.5)" strokeWidth="2" d="
                 M 20,0
                 Q 40,-20 60,0 Q 80,-20 100,0 Q 120,-20 140,0 Q 160,-20 180,0 Q 200,-20 220,0
                 Q 240,-20 260,0 Q 280,-20 300,0 Q 320,-20 340,0 Q 360,-20 380,0 Q 400,-20 420,0 Q 440,-20 460,0

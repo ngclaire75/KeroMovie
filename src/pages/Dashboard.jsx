@@ -6,10 +6,11 @@ import { getProfile } from '../lib/authHelpers';
 import { useApp } from '../context/AppContext';
 import ProfileModal from '../components/ProfileModal/ProfileModal';
 import logo from '../../images/keromovielogo.png';
-import bookImg   from '../../images/book.png';
-import musicImg  from '../../images/music.png';
-import tasteImg  from '../../images/taste.png';
-import cameraImg from '../../images/camera.png';
+import bookImg     from '../../images/book.png';
+import musicImg    from '../../images/music.png';
+import tasteImg    from '../../images/taste.png';
+import cameraImg   from '../../images/camera.png';
+import activityImg from '../../images/activity.png';
 import playlistBg from '../../images/playlistbackground.gif';
 import './dashboard.css';
 
@@ -1367,7 +1368,7 @@ export default function Dashboard() {
               </div>
               {myForumPosts.length === 0 ? (
                 <div className="db-empty">
-                  <IcoForum />
+                  <img src={activityImg} alt="" className="db-activity-empty-img" />
                   <p>No activity yet. Comment or rate movies from the Forums page.</p>
                 </div>
               ) : (
