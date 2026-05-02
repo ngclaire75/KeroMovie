@@ -267,9 +267,6 @@ export default function ProfileModal({ profile, onClose, onProfileUpdate }) {
         {(successMsg || errorMsg) && (
           <div className="pm-popup-backdrop" onClick={() => { setSuccessMsg(''); setErrorMsg(''); }}>
             <div className="pm-popup" onClick={e => e.stopPropagation()}>
-              <button className="pm-popup-close" onClick={() => { setSuccessMsg(''); setErrorMsg(''); }}>
-                <IcoX />
-              </button>
               <img src={errorGif} alt="" className="pm-popup-gif" />
               <div className="pm-popup-msg">{successMsg || errorMsg}</div>
             </div>
