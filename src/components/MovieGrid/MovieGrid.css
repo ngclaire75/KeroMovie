@@ -491,18 +491,18 @@
   min-height: 180px;
 }
 
-@keyframes mg-modal-spin {
-  to { transform: rotate(360deg); }
+
+@keyframes app-pulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.18); }
 }
 
-.mg-modal-spin {
-  width: 32px;
-  height: 32px;
-  border: 3px solid rgba(231,76,60,0.2);
-  border-top-color: #e74c3c;
-  border-radius: 50%;
-  animation: mg-modal-spin 0.75s linear infinite;
+.app-loader {
+  width: 68px;
+  height: auto;
   display: block;
+  margin: 0 auto;
+  animation: app-pulse 0.9s ease-in-out infinite;
 }
 
 .mg-modal-bm-btn {

@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../../context/AppContext';
+import loadingImg from '../../../images/loading.png';
 import './MovieGrid.css';
 
 const IcoBookmarkFill = () => (
@@ -330,7 +331,7 @@ export default function MovieGrid({ genre = 'Trending Now', searchQuery = '' }) 
               <div className="mg-modal-content">
                 {modalLoading ? (
                   <div className="mg-modal-loading">
-                    <span className="mg-modal-spin" />
+                    <img src={loadingImg} alt="" className="app-loader" />
                   </div>
                 ) : (
                   <>

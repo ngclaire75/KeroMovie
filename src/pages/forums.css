@@ -414,14 +414,21 @@
   to { transform: rotate(360deg); }
 }
 
+@keyframes app-pulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.18); }
+}
+
+.app-loader {
+  width: 68px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  animation: app-pulse 0.9s ease-in-out infinite;
+}
+
 .fr-feed-spin {
   display: block;
-  width: 28px;
-  height: 28px;
-  border: 3px solid rgba(231,76,60,0.2);
-  border-top-color: #e74c3c;
-  border-radius: 50%;
-  animation: fr-spin 0.75s linear infinite;
   margin: 0 auto;
 }
 
@@ -456,6 +463,11 @@
 .fr-submit:hover:not(:disabled) { background: #c0392b; }
 .fr-submit:disabled { opacity: 0.38; cursor: not-allowed; }
 
+@keyframes fr-float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-10px); }
+}
+
 .fr-guest-prompt {
   display: flex;
   flex-direction: column;
@@ -465,6 +477,13 @@
   text-align: center;
   color: rgba(255,255,255,0.5);
   font-size: 0.9rem;
+}
+
+.fr-guest-char {
+  width: 110px;
+  height: auto;
+  margin-top: -28px;
+  animation: fr-float 2.4s ease-in-out infinite;
 }
 
 .fr-guest-prompt .fr-submit {
@@ -647,20 +666,21 @@
 }
 
 .fr-post-del {
-  background: none;
+  background: linear-gradient(135deg, #e74c3c, #7b1a1a);
   border: none;
-  color: #fff;
+  color: #ffffff !important;
   cursor: pointer;
-  padding: 4px 6px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.18s, background 0.18s;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  transition: opacity 0.18s, transform 0.12s;
 }
 
-.fr-post-del svg { width: 13px; height: 13px; }
-.fr-post-del:hover { color: #ff7675; background: rgba(231,76,60,0.1); }
+.fr-post-del:hover  { opacity: 0.85; }
+.fr-post-del:active { transform: scale(0.96); }
 
 @keyframes fr-nav-item-in {
   from { opacity: 0; transform: translateX(-12px); }
@@ -798,6 +818,115 @@
 
   .fr-star { font-size: 1.1rem; }
 
-  .fr-search-input { font-size: 16px; }
-  .fr-textarea     { font-size: 16px; }
+  .fr-search-input { font-size: 0.78rem; }
+  .fr-textarea     { font-size: 0.78rem; }
+}
+
+/* ══════════════════════════════
+   DELETE CONFIRM DIALOG
+══════════════════════════════ */
+@keyframes fr-del-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.fr-del-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.fr-del-dialog {
+  position: relative;
+  width: 480px;
+  max-width: 100%;
+  animation: fr-del-in 0.22s ease both;
+  overflow: visible;
+}
+
+.fr-del-frame {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+  pointer-events: none;
+  user-select: none;
+}
+
+@keyframes fr-char-sway {
+  0%, 100% { transform: rotate(-3deg); }
+  50%       { transform: rotate(3deg); }
+}
+
+.fr-del-char {
+  position: absolute;
+  top: -40px;
+  right: -28px;
+  width: 155px;
+  height: auto;
+  pointer-events: none;
+  user-select: none;
+  transform-origin: bottom center;
+  animation: fr-char-sway 2s ease-in-out infinite;
+}
+
+.fr-del-inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 20px 42px 32px;
+}
+
+.fr-del-msg {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  text-align: center;
+  margin: 0;
+}
+
+.fr-del-actions {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.fr-del-btn {
+  padding: 10px 32px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s, transform 0.12s;
+}
+
+.fr-del-btn:hover  { opacity: 0.88; }
+.fr-del-btn:active { transform: scale(0.97); }
+
+.fr-del-btn--back {
+  background: #fff;
+  color: #7b0000;
+}
+
+.fr-del-btn--confirm {
+  background: #fff;
+  color: #7b0000;
+}
+
+@media (max-width: 520px) {
+  .fr-del-char { width: 110px; top: -28px; right: -16px; }
+  .fr-del-msg  { font-size: 1rem; padding: 0 16px; }
 }

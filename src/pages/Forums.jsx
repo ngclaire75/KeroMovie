@@ -8,6 +8,9 @@ import { auth, db } from '../lib/firebase';
 import { getProfile } from '../lib/authHelpers';
 import { useApp } from '../context/AppContext';
 import logo from '../../images/keromovielogo.png';
+import forumCharacter from '../../images/forumcharacter.png';
+import popupChar   from '../../images/popup.png';
+import loadingImg  from '../../images/loading.png';
 import './forums.css';
 
 const TMDB_KEY  = import.meta.env.VITE_TMDB_KEY;
@@ -75,6 +78,7 @@ export default function Forums() {
   const [feedError,   setFeedError]   = useState('');
   const [filterMovie, setFilterMovie] = useState(null);
   const [mobileNav,   setMobileNav]   = useState(false);
+  const [confirmId,   setConfirmId]   = useState(null);
 
   const searchRef    = useRef(null);
   const searchTimer  = useRef(null);
@@ -206,6 +210,7 @@ export default function Forums() {
 
   async function handleDelete(postId) {
     try { await deleteDoc(doc(db, FORUMS_COL, postId)); fetchPosts(); } catch {}
+    setConfirmId(null);
   }
 
   const displayPosts = filterMovie
@@ -272,8 +277,8 @@ export default function Forums() {
 
           {!authUser && authReady ? (
             <div className="fr-guest-prompt">
+              <img src={forumCharacter} alt="" className="fr-guest-char" />
               <p>Sign in to post a review.</p>
-              <button className="fr-submit" onClick={() => navigate('/login')}>Sign In</button>
             </div>
           ) : null}
 
@@ -387,7 +392,7 @@ export default function Forums() {
 
           {feedLoading ? (
             <div className="fr-empty">
-              <span className="fr-feed-spin" />
+              <img src={loadingImg} alt="" className="app-loader" />
             </div>
           ) : feedError ? (
             <div className="fr-empty">
@@ -434,10 +439,9 @@ export default function Forums() {
                     {authUser && post.userId === authUser.uid && (
                       <button
                         className="fr-post-del"
-                        onClick={() => handleDelete(post.id)}
-                        title="Delete"
+                        onClick={() => setConfirmId(post.id)}
                       >
-                        <IcoTrash />
+                        Delete
                       </button>
                     )}
                   </div>
@@ -448,6 +452,37 @@ export default function Forums() {
         </section>
 
       </main>
+
+      {/* ── Delete confirm dialog ── */}
+      {confirmId && (
+        <div className="fr-del-overlay" onClick={() => setConfirmId(null)}>
+          <div className="fr-del-dialog" onClick={e => e.stopPropagation()}>
+            <svg className="fr-del-frame" viewBox="-28 -28 556 276" xmlns="http://www.w3.org/2000/svg">
+              <path fill="#720000" d="
+                M 20,0
+                Q 40,-20 60,0 Q 80,-20 100,0 Q 120,-20 140,0 Q 160,-20 180,0 Q 200,-20 220,0
+                Q 240,-20 260,0 Q 280,-20 300,0 Q 320,-20 340,0 Q 360,-20 380,0 Q 400,-20 420,0 Q 440,-20 460,0
+                Q 480,0 480,20
+                Q 500,40 480,60 Q 500,80 480,100 Q 500,120 480,140 Q 500,160 480,180
+                Q 480,200 460,200
+                Q 440,220 420,200 Q 400,220 380,200 Q 360,220 340,200 Q 320,220 300,200 Q 280,220 260,200
+                Q 240,220 220,200 Q 200,220 180,200 Q 160,220 140,200 Q 120,220 100,200 Q 80,220 60,200 Q 40,220 20,200
+                Q 0,200 0,180
+                Q -20,160 0,140 Q -20,120 0,100 Q -20,80 0,60 Q -20,40 0,20
+                Q 0,0 20,0 Z
+              "/>
+            </svg>
+            <img src={popupChar}  alt="" className="fr-del-char" />
+            <div className="fr-del-inner">
+              <p className="fr-del-msg">Confirm deletion of post</p>
+              <div className="fr-del-actions">
+                <button className="fr-del-btn fr-del-btn--back"    onClick={() => setConfirmId(null)}>Back</button>
+                <button className="fr-del-btn fr-del-btn--confirm" onClick={() => handleDelete(confirmId)}>Confirm</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
