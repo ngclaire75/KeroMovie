@@ -156,6 +156,7 @@
 }
 
 .fr-page-title svg { width: 22px; height: 22px; color: #e74c3c; }
+.fr-page-title-text { margin-left: 8px; }
 
 @keyframes fr-teddy-float {
   0%, 100% { transform: translateY(0); }
@@ -163,9 +164,10 @@
 }
 
 .fr-page-title-teddy {
-  width: 80px;
+  width: 65px;
   height: auto;
   flex-shrink: 0;
+  margin-left: 16px;
   margin-right: -8px;
 }
 
@@ -193,7 +195,7 @@
 .fr-compose {
   position: sticky;
   top: 76px;
-  background: rgba(231,76,60,0.04);
+  background: #dcc7ad;
   border: 1px solid rgba(231,76,60,0.16);
   border-radius: 14px;
   padding: 22px 20px;
@@ -202,7 +204,7 @@
 .fr-compose-title {
   font-size: 0.95rem;
   font-weight: 700;
-  color: #e74c3c;
+  color: #8b1a1a;
   margin-bottom: 20px;
   display: flex;
   align-items: center;
@@ -215,7 +217,7 @@
 .fr-label {
   font-size: 0.74rem;
   font-weight: 700;
-  color: rgba(255,255,255,0.5);
+  color: rgba(60,30,10,0.75);
   text-transform: uppercase;
   letter-spacing: 0.07em;
   margin-bottom: 8px;
@@ -228,7 +230,7 @@
   font-weight: 400;
   text-transform: none;
   letter-spacing: 0;
-  color: rgba(255,255,255,0.28);
+  color: rgba(60,30,10,0.45);
   font-size: 0.7rem;
   margin-left: 4px;
 }
@@ -240,8 +242,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(60,30,10,0.08);
+  border: 1px solid rgba(60,30,10,0.18);
   border-radius: 9px;
   padding: 9px 12px;
   transition: border-color 0.2s;
@@ -254,7 +256,7 @@
 .fr-search-input-wrap svg {
   width: 14px;
   height: 14px;
-  color: rgba(255,255,255,0.35);
+  color: rgba(60,30,10,0.45);
   flex-shrink: 0;
 }
 
@@ -264,11 +266,11 @@
   outline: none;
   font: inherit;
   font-size: 0.84rem;
-  color: #fff;
+  color: #3c1e0a;
   width: 100%;
 }
 
-.fr-search-input::placeholder { color: rgba(255,255,255,0.28); }
+.fr-search-input::placeholder { color: rgba(60,30,10,0.4); }
 
 /* Dropdown results */
 .fr-search-drop {
@@ -374,7 +376,7 @@
   border: none;
   font-size: 1.35rem;
   line-height: 1;
-  color: rgba(255,255,255,0.18);
+  color: rgba(60,30,10,0.28);
   cursor: pointer;
   padding: 3px 2px;
   transition: color 0.12s, transform 0.1s;
@@ -393,20 +395,20 @@
 /* Textarea */
 .fr-textarea {
   width: 100%;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(60,30,10,0.08);
+  border: 1px solid rgba(60,30,10,0.18);
   border-radius: 9px;
   padding: 10px 12px;
   font: inherit;
   font-size: 0.84rem;
-  color: #fff;
+  color: #3c1e0a;
   outline: none;
   resize: none;
   min-height: 88px;
   transition: border-color 0.2s;
 }
 
-.fr-textarea::placeholder { color: rgba(255,255,255,0.28); }
+.fr-textarea::placeholder { color: rgba(60,30,10,0.4); }
 .fr-textarea:focus { border-color: rgba(231,76,60,0.5); }
 
 /* Post success banner */
@@ -618,7 +620,7 @@
 
 /* ── Post card ── */
 .fr-post {
-  background: #d9c8ae;
+  background: #dcc7ad;
   border: 1px solid rgba(180,80,60,0.18);
   border-radius: 12px;
   overflow: hidden;

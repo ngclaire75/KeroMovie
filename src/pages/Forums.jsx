@@ -13,7 +13,7 @@ import popupChar   from '../../images/popup.png';
 import loadingImg  from '../../images/loading.png';
 import reviewGif   from '../../images/review.gif';
 import chatImg     from '../../images/chat.png';
-import teddyImg    from '../../images/teddy.gif';
+import teddyImg    from '../../images/forum.gif';
 import './forums.css';
 
 const TMDB_KEY  = import.meta.env.VITE_TMDB_KEY;
@@ -263,7 +263,7 @@ export default function Forums() {
 
       {/* ── Page heading ── */}
       <div className="fr-page-head">
-        <h1 className="fr-page-title"><img src={teddyImg} alt="" className="fr-page-title-teddy" />Community Forums</h1>
+        <h1 className="fr-page-title"><img src={teddyImg} alt="" className="fr-page-title-teddy" /><span className="fr-page-title-text">Community Forums</span></h1>
         <p className="fr-page-sub">Rate and review movies. Share your take with everyone.</p>
       </div>
 
